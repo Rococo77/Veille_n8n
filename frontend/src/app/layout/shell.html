@@ -1,0 +1,78 @@
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<div class="frame">
+  <nav class="rail" aria-label="Navigation principale">
+    <a class="brand" routerLink="/">Veille</a>
+
+    <section aria-labelledby="nav-types">
+      <h2 id="nav-types" class="rail-heading">Types de veille</h2>
+      <ul>
+        <li>
+          <a
+            routerLink="/"
+            [queryParams]="{}"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            >Tout le fil</a
+          >
+        </li>
+        @for (t of types(); track t.value) {
+          <li>
+            <a routerLink="/" [queryParams]="{ type: t.value }" routerLinkActive="active">
+              <span>{{ t.label }}</span>
+              <span class="count">{{ t.groups }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+
+    @if (themeList().length) {
+      <section aria-labelledby="nav-themes">
+        <h2 id="nav-themes" class="rail-heading">Thèmes</h2>
+        <ul>
+          @for (theme of themeList(); track theme.id) {
+            <li>
+              <a routerLink="/" [queryParams]="{ theme: theme.id }" routerLinkActive="active">
+                <span class="swatch" [style.background]="theme.color" aria-hidden="true"></span>
+                <span>{{ theme.name }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <section aria-labelledby="nav-manage">
+      <h2 id="nav-manage" class="rail-heading">Gérer</h2>
+      <ul>
+        <li>
+          <a routerLink="/groupes" routerLinkActive="active">
+            <span>Groupes et sources</span>
+            @if (failing() > 0) {
+              <span class="count failing" [attr.aria-label]="failing() + ' sources en erreur'">
+                {{ failing() }}
+              </span>
+            }
+          </a>
+        </li>
+        @if (auth.isEditor()) {
+          <li><a routerLink="/themes" routerLinkActive="active">Thèmes</a></li>
+        }
+        @if (auth.isAdmin()) {
+          <li><a routerLink="/admin/utilisateurs" routerLinkActive="active">Utilisateurs</a></li>
+          <li><a routerLink="/admin/journal" routerLinkActive="active">Journal d'audit</a></li>
+        }
+      </ul>
+    </section>
+
+    <footer class="who">
+      <a routerLink="/compte" class="email">{{ auth.me()?.email }}</a>
+      <button type="button" class="btn-link small" (click)="logout()">Se déconnecter</button>
+    </footer>
+  </nav>
+
+  <main id="contenu" class="main" tabindex="-1">
+    <router-outlet />
+  </main>
+</div>

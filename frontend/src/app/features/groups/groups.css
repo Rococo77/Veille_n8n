@@ -1,0 +1,123 @@
+:host {
+  display: block;
+  max-width: 60rem;
+}
+
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.page-head p {
+  margin: var(--space-1) 0 0;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+.panel h2 {
+  margin-bottom: var(--space-4);
+}
+
+.type-block {
+  margin-bottom: var(--space-5);
+}
+.type-block h2 {
+  font-size: var(--step-0);
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.group-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+}
+.group-row:hover {
+  background: var(--surface);
+}
+.group-row.off .name {
+  color: var(--muted);
+}
+.name {
+  font-weight: 600;
+}
+.facts {
+  display: flex;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  padding: var(--space-5) 0;
+}
+
+@media (max-width: 40rem) {
+  .group-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .group-row > :nth-child(n + 3) {
+    grid-column: 2;
+  }
+}
+
+.section-title {
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+.url {
+  word-break: break-all;
+  max-width: 22rem;
+}
+
+.actions {
+  white-space: nowrap;
+}
+.actions .btn-link + .btn-link {
+  margin-left: var(--space-3);
+}
+
+.add-source {
+  margin-top: var(--space-4);
+}
+.add-source h3 {
+  font-size: var(--step-0);
+  margin-bottom: var(--space-3);
+}
+.source-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-3);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: var(--space-4) 0;
+}
+
+@media (max-width: 40rem) {
+  .source-grid {
+    grid-template-columns: 1fr;
+  }
+}

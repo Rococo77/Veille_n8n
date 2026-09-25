@@ -1,0 +1,118 @@
+.skip {
+  position: absolute;
+  left: -999px;
+}
+.skip:focus {
+  left: var(--space-4);
+  top: var(--space-4);
+  z-index: 10;
+  background: var(--surface);
+  padding: var(--space-2) var(--space-3);
+}
+
+.frame {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.rail {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  border-right: 1px solid var(--rule);
+}
+
+.brand {
+  font-family: var(--font-read);
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  padding-inline: var(--space-2);
+}
+
+.rail-heading {
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
+  padding-inline: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.rail ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rail li a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.35rem var(--space-2);
+  border-radius: var(--radius);
+  color: var(--ink);
+  text-decoration: none;
+}
+.rail li a:hover {
+  background: var(--surface);
+}
+.rail li a.active {
+  background: var(--surface);
+  box-shadow: inset 3px 0 0 var(--signal);
+  font-weight: 600;
+}
+
+.count {
+  margin-left: auto;
+  font-size: var(--step--1);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.count.failing {
+  color: var(--alert);
+  font-weight: 700;
+}
+
+.who {
+  margin-top: auto;
+  display: grid;
+  gap: var(--space-1);
+  padding-inline: var(--space-2);
+  font-size: var(--step--1);
+}
+.who .email {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.who .btn-link {
+  justify-self: start;
+}
+
+.main {
+  padding: var(--space-6) var(--space-5);
+  outline: none;
+}
+
+@media (max-width: 52rem) {
+  .frame {
+    grid-template-columns: 1fr;
+  }
+  .rail {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .main {
+    padding: var(--space-5) var(--space-4);
+  }
+}

@@ -1,0 +1,39 @@
+<main class="auth">
+  <h1 class="brand">Veille</h1>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2>Connexion</h2>
+
+    @if (error(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        autocomplete="username"
+        [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+      />
+    </div>
+
+    <div class="field">
+      <label for="password">Mot de passe</label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        autocomplete="current-password"
+        [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+      />
+    </div>
+
+    <button class="btn btn-primary wide" type="submit" [disabled]="busy()">
+      {{ busy() ? 'Vérification…' : 'Continuer' }}
+    </button>
+    <p class="muted small">
+      Un code de votre application d'authentification vous sera demandé ensuite.
+    </p>
+  </form>
+</main>

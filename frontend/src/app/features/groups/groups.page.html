@@ -1,0 +1,73 @@
+<header class="page-head">
+  <div>
+    <h1>Groupes et sources</h1>
+    <p class="muted">Chaque groupe rassemble des flux RSS sous un type de veille et un thème.</p>
+  </div>
+  @if (auth.isEditor() && !creating()) {
+    <button class="btn btn-primary" type="button" (click)="creating.set(true)">
+      Nouveau groupe
+    </button>
+  }
+</header>
+
+@if (creating()) {
+  <section class="panel" aria-labelledby="new-group">
+    <h2 id="new-group">Nouveau groupe</h2>
+    @if (themes().length === 0) {
+      <p>
+        Il faut au moins un thème pour classer un groupe.
+        <a routerLink="/themes">Créer un thème</a>
+      </p>
+    } @else {
+      @if (error(); as message) {
+        <p class="alert" role="alert">{{ message }}</p>
+      }
+      <app-group-form
+        [themes]="themes()"
+        submitLabel="Créer le groupe"
+        [busy]="busy()"
+        (submitted)="create($event)"
+        (cancelled)="creating.set(false)"
+      />
+    }
+  </section>
+}
+
+@if (loadError(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+@for (section of sections(); track section.value) {
+  <section class="type-block" [attr.aria-labelledby]="'t-' + section.value">
+    <h2 [id]="'t-' + section.value">Veille {{ section.label.toLowerCase() }}</h2>
+    <ul class="group-list">
+      @for (g of section.groups; track g.id) {
+        <li>
+          <a class="group-row" [routerLink]="['/groupes', g.id]" [class.off]="!g.enabled">
+            <span class="swatch" [style.background]="g.theme.color" aria-hidden="true"></span>
+            <span class="name">{{ g.name }}</span>
+            <span class="muted small">{{ g.theme.name }}</span>
+            <span class="facts small">
+              {{ g.source_count }} {{ g.source_count > 1 ? 'sources' : 'source' }}
+              @if (g.failing_source_count > 0) {
+                <span class="status-error">{{ g.failing_source_count }} en erreur</span>
+              }
+              @if (!g.enabled) {
+                <span class="muted">en pause</span>
+              }
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+} @empty {
+  @if (!loading() && !loadError()) {
+    <p class="muted empty">
+      Aucun groupe pour l'instant.
+      @if (auth.isEditor()) {
+        Créez-en un pour commencer à suivre des sources.
+      }
+    </p>
+  }
+}

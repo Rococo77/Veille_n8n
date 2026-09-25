@@ -1,0 +1,160 @@
+<p class="small"><a routerLink="/groupes">Groupes et sources</a></p>
+
+@if (loadError(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+@if (group(); as g) {
+  <header class="page-head">
+    <div>
+      <h1 class="row">
+        <span class="swatch" [style.background]="g.theme.color" aria-hidden="true"></span>
+        {{ g.name }}
+      </h1>
+      <p class="muted">
+        Veille {{ typeLabel(g.veille_type).toLowerCase() }}, thème {{ g.theme.name }}.
+        @if (!g.enabled) {
+          <strong>En pause : n8n ne relève pas ces sources.</strong>
+        }
+      </p>
+      @if (g.description) {
+        <p>{{ g.description }}</p>
+      }
+    </div>
+    <div class="row">
+      <a class="btn" routerLink="/" [queryParams]="{ group: g.id }">Voir les articles</a>
+      @if (auth.isEditor() && !editing()) {
+        <button class="btn" type="button" (click)="editing.set(true)">Modifier</button>
+      }
+    </div>
+  </header>
+
+  @if (error(); as message) {
+    <p class="alert" role="alert">{{ message }}</p>
+  }
+
+  @if (editing()) {
+    <section class="panel" aria-labelledby="edit-group">
+      <h2 id="edit-group">Modifier le groupe</h2>
+      <app-group-form
+        [themes]="themes()"
+        [initial]="formValue()"
+        [busy]="busy()"
+        (submitted)="save($event)"
+        (cancelled)="editing.set(false)"
+      />
+      <hr />
+      <div class="row">
+        <button class="btn" type="button" [disabled]="busy()" (click)="toggleGroup(g)">
+          {{ g.enabled ? 'Mettre en pause' : 'Réactiver' }}
+        </button>
+        <button class="btn btn-danger" type="button" [disabled]="busy()" (click)="deleteGroup(g)">
+          Supprimer le groupe
+        </button>
+      </div>
+    </section>
+  }
+
+  <section aria-labelledby="sources-title">
+    <h2 id="sources-title" class="section-title">Sources</h2>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Nom</th>
+            <th scope="col">Flux</th>
+            <th scope="col">Dernier relevé</th>
+            <th scope="col">État</th>
+            @if (auth.isEditor()) {
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of g.sources; track s.id) {
+            <tr [class.muted]="!s.enabled">
+              <td>{{ s.name }}</td>
+              <td class="url">{{ s.url }}</td>
+              <td>{{ date(s.last_fetch_at) }}</td>
+              <td>
+                @switch (s.last_status) {
+                  @case ('ok') {
+                    <span class="status-ok">OK</span>
+                  }
+                  @case ('error') {
+                    <span class="status-error">Erreur ({{ s.consecutive_failures }} de suite)</span>
+                    <br /><span class="small">{{ s.last_error }}</span>
+                  }
+                  @default {
+                    <span class="muted">En attente</span>
+                  }
+                }
+                @if (!s.enabled) {
+                  <br /><span class="small">désactivée</span>
+                }
+              </td>
+              @if (auth.isEditor()) {
+                <td class="actions">
+                  <button
+                    class="btn-link small"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="toggleSource(s)"
+                  >
+                    {{ s.enabled ? 'Désactiver' : 'Activer' }}
+                  </button>
+                  <button
+                    class="btn-link small btn-danger"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="deleteSource(s)"
+                  >
+                    Supprimer
+                  </button>
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="muted">Aucune source dans ce groupe.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (auth.isEditor()) {
+      <form class="panel add-source" [formGroup]="sourceForm" (ngSubmit)="addSource()" novalidate>
+        <h3>Ajouter une source</h3>
+        <div class="source-grid">
+          <div class="field">
+            <label for="s-name">Nom</label>
+            <input
+              id="s-name"
+              type="text"
+              formControlName="name"
+              maxlength="120"
+              [attr.aria-invalid]="
+                sourceForm.controls.name.touched && sourceForm.controls.name.invalid
+              "
+            />
+          </div>
+          <div class="field">
+            <label for="s-url">URL du flux RSS ou Atom</label>
+            <input
+              id="s-url"
+              type="url"
+              formControlName="url"
+              placeholder="https://exemple.fr/feed"
+              [attr.aria-invalid]="
+                sourceForm.controls.url.touched && sourceForm.controls.url.invalid
+              "
+            />
+            <span class="hint">Adresse publique en http(s), ports 80 ou 443 uniquement.</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit" [disabled]="busy()">Ajouter la source</button>
+      </form>
+    }
+  </section>
+}

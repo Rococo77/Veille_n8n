@@ -1,0 +1,270 @@
+/* Veille — jetons de design et base partagée.
+   Aucune ressource tierce (polices, CDN) : la CSP n'autorise que 'self'. */
+
+:root {
+  color-scheme: light dark;
+
+  --paper: #f2f4f6;
+  --surface: #ffffff;
+  --ink: #17202b;
+  --muted: #5a6573;
+  --rule: #d3d9e0;
+  --signal: #1f4fd1;
+  --signal-ink: #ffffff;
+  --alert: #b3261e;
+  --alert-soft: #fbe9e7;
+  --ok: #1e7a4c;
+
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-read: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif;
+
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-3: 2rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.5rem;
+
+  --radius: 6px;
+  --rail: 17rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #101419;
+    --surface: #171c23;
+    --ink: #e4e8ee;
+    --muted: #98a3b1;
+    --rule: #28303a;
+    --signal: #8da6ff;
+    --signal-ink: #0c1330;
+    --alert: #ff8a80;
+    --alert-soft: #3a1d1b;
+    --ok: #6fd3a0;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+h1 {
+  font-size: var(--step-2);
+}
+h2 {
+  font-size: var(--step-1);
+}
+
+a {
+  color: var(--signal);
+  text-underline-offset: 0.18em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: var(--step--1);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Formulaires ------------------------------------------------------------------ */
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+.field label {
+  font-weight: 600;
+  font-size: var(--step--1);
+}
+.field .hint {
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='url'],
+input[type='search'],
+textarea,
+select {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.7rem;
+}
+textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+input[aria-invalid='true'],
+select[aria-invalid='true'] {
+  border-color: var(--alert);
+}
+input[type='color'] {
+  inline-size: 3rem;
+  block-size: 2.25rem;
+  padding: 2px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.check {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: inherit;
+  font-weight: 600;
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn:hover {
+  border-color: var(--muted);
+}
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+  border-color: var(--signal);
+}
+.btn-danger {
+  color: var(--alert);
+}
+.btn-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--signal);
+  font-weight: 500;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.alert {
+  border-left: 3px solid var(--alert);
+  background: var(--alert-soft);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: var(--space-4);
+}
+
+/* --- Tableaux d'administration ----------------------------------------------------- */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--step--1);
+}
+.table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+.table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+
+.swatch {
+  display: inline-block;
+  inline-size: 0.7rem;
+  block-size: 0.7rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+.status-error {
+  color: var(--alert);
+  font-weight: 600;
+}
+.status-ok {
+  color: var(--ok);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.btn-link.btn-danger {
+  color: var(--alert);
+}

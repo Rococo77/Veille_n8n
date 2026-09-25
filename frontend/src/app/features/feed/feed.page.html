@@ -1,0 +1,88 @@
+<header class="head">
+  <h1>{{ heading() }}</h1>
+
+  <form class="filters" [formGroup]="searchForm" (ngSubmit)="submitSearch()" role="search">
+    <label class="visually-hidden" for="f-type">Type de veille</label>
+    <select id="f-type" (change)="setFilter('type', $any($event.target).value)">
+      <option value="" [selected]="!filters().veille_type">Tous les types</option>
+      @for (t of types; track t.value) {
+        <option [value]="t.value" [selected]="t.value === filters().veille_type">
+          {{ t.label }}
+        </option>
+      }
+    </select>
+
+    <label class="visually-hidden" for="f-theme">Thème</label>
+    <select id="f-theme" (change)="setFilter('theme', $any($event.target).value)">
+      <option value="" [selected]="!filters().theme_id">Tous les thèmes</option>
+      @for (t of themes(); track t.id) {
+        <option [value]="t.id" [selected]="t.id === filters().theme_id">{{ t.name }}</option>
+      }
+    </select>
+
+    <label class="visually-hidden" for="f-group">Groupe</label>
+    <select id="f-group" (change)="setFilter('group', $any($event.target).value)">
+      <option value="" [selected]="!filters().group_id">Tous les groupes</option>
+      @for (g of groups(); track g.id) {
+        <option [value]="g.id" [selected]="g.id === filters().group_id">{{ g.name }}</option>
+      }
+    </select>
+
+    <label class="visually-hidden" for="f-q">Rechercher dans les titres</label>
+    <input
+      id="f-q"
+      type="search"
+      formControlName="q"
+      placeholder="Rechercher un titre"
+      maxlength="100"
+    />
+  </form>
+</header>
+
+@if (feed.error(); as error) {
+  <p class="alert" role="alert">{{ error }}</p>
+}
+
+@for (section of sections(); track section.key) {
+  <section class="day" [attr.aria-labelledby]="'day-' + section.key">
+    <h2 class="day-label" [id]="'day-' + section.key">{{ section.label }}</h2>
+    @for (a of section.articles; track a.id) {
+      <article class="item" [style.--theme]="a.theme.color">
+        <h3 class="title">
+          <a [href]="a.link" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
+        </h3>
+        @if (a.snippet) {
+          <p class="snippet">{{ a.snippet }}</p>
+        }
+        <p class="meta">
+          <time [attr.datetime]="a.published_at">{{ time(a.published_at) }}</time>
+          <span>{{ a.source.name }}</span>
+          <a [routerLink]="[]" [queryParams]="{ group: a.group.id }">{{ a.group.name }}</a>
+          <span class="type">{{ typeLabel(a.group.veille_type) }}</span>
+        </p>
+      </article>
+    }
+  </section>
+} @empty {
+  @if (!feed.loading() && !feed.error()) {
+    <div class="empty">
+      <p>Aucun article ne correspond à ces filtres.</p>
+      <p class="muted small">
+        Les flux sont relevés toutes les deux heures. Ajoutez des sources dans
+        <a routerLink="/groupes">Groupes et sources</a>, ou
+        <button type="button" class="btn-link" (click)="clearFilters()">retirez les filtres</button
+        >.
+      </p>
+    </div>
+  }
+}
+
+<div class="more" aria-live="polite">
+  @if (feed.loading()) {
+    <p class="muted">Chargement des articles…</p>
+  } @else if (feed.hasMore()) {
+    <button type="button" class="btn" (click)="feed.loadMore()">
+      Charger les articles plus anciens
+    </button>
+  }
+</div>

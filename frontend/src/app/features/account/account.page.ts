@@ -1,0 +1,130 @@
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
+
+import { AuthStore } from '../../core/auth.store';
+import { problemMessage } from '../../core/problem';
+
+function samePasswords(group: AbstractControl): ValidationErrors | null {
+  const next = group.get('next')?.value;
+  const confirm = group.get('confirm')?.value;
+  return next && confirm && next !== confirm ? { mismatch: true } : null;
+}
+
+@Component({
+  selector: 'app-account-page',
+  imports: [ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <h1>Mon compte</h1>
+    <p class="muted">Connecté en tant que {{ auth.me()?.email }}.</p>
+
+    <form class="panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <h2>Changer de mot de passe</h2>
+      @if (error(); as message) {
+        <p class="alert" role="alert">{{ message }}</p>
+      }
+      @if (done()) {
+        <p role="status">Mot de passe modifié. Vos autres sessions ont été fermées.</p>
+      }
+      <div class="field">
+        <label for="a-current">Mot de passe actuel</label>
+        <input
+          id="a-current"
+          type="password"
+          formControlName="current"
+          autocomplete="current-password"
+        />
+      </div>
+      <div class="field">
+        <label for="a-next">Nouveau mot de passe</label>
+        <input
+          id="a-next"
+          type="password"
+          formControlName="next"
+          autocomplete="new-password"
+          [attr.aria-invalid]="form.controls.next.touched && form.controls.next.invalid"
+        />
+        <span class="hint"
+          >12 caractères minimum. Une phrase de passe est plus simple à retenir.</span
+        >
+      </div>
+      <div class="field">
+        <label for="a-confirm">Confirmation</label>
+        <input
+          id="a-confirm"
+          type="password"
+          formControlName="confirm"
+          autocomplete="new-password"
+          [attr.aria-invalid]="form.touched && form.hasError('mismatch')"
+        />
+        @if (form.touched && form.hasError('mismatch')) {
+          <span class="hint status-error">Les deux mots de passe diffèrent.</span>
+        }
+      </div>
+      <button class="btn btn-primary" type="submit" [disabled]="busy()">
+        Changer le mot de passe
+      </button>
+    </form>
+  `,
+  styles: `
+    :host {
+      display: block;
+      max-width: 30rem;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: var(--space-5);
+      margin-top: var(--space-5);
+    }
+    .panel h2 {
+      margin-bottom: var(--space-4);
+    }
+  `,
+})
+export class AccountPage {
+  protected readonly auth = inject(AuthStore);
+  protected readonly busy = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly done = signal(false);
+
+  protected readonly form = new FormGroup(
+    {
+      current: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      next: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.minLength(12), Validators.maxLength(256)],
+      }),
+      confirm: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    },
+    { validators: samePasswords },
+  );
+
+  async submit(): Promise<void> {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.busy.set(true);
+    this.error.set(null);
+    this.done.set(false);
+    const { current, next } = this.form.getRawValue();
+    try {
+      await this.auth.changePassword(current, next);
+      this.form.reset();
+      this.done.set(true);
+    } catch (error) {
+      this.error.set(problemMessage(error));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+}

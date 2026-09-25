@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  max-width: 60rem;
+}
+
+.head {
+  margin-bottom: var(--space-5);
+}
+.head p {
+  margin: var(--space-1) 0 0;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  margin-top: var(--space-5);
+}
+.panel h2 {
+  margin-bottom: var(--space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1.4fr 1fr;
+  gap: var(--space-3);
+}
+
+.actions {
+  white-space: nowrap;
+}
+.actions .btn-link + .btn-link {
+  margin-left: var(--space-3);
+}
+
+select {
+  width: auto;
+}
+
+@media (max-width: 40rem) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

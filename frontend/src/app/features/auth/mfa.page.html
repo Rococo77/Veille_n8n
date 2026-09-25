@@ -1,0 +1,53 @@
+<main class="auth">
+  <h1 class="brand">Veille</h1>
+
+  @if (expired()) {
+    <form>
+      <h2>Session expirée</h2>
+      <p>Le délai pour saisir le code est dépassé ou trop d'essais ont échoué.</p>
+      <a class="btn btn-primary wide" routerLink="/connexion">Se reconnecter</a>
+    </form>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <h2>{{ enrollment() ? 'Configurer le second facteur' : 'Code de vérification' }}</h2>
+
+      @if (enrollment(); as e) {
+        <div class="enroll">
+          <ol>
+            <li>
+              Ouvrez votre application d'authentification (Aegis, 2FAS, Google Authenticator…).
+            </li>
+            <li>Scannez ce code ou saisissez la clé manuellement.</li>
+            <li>Entrez le code à 6 chiffres affiché.</li>
+          </ol>
+          <canvas #qr width="200" height="200" aria-label="QR code de configuration"></canvas>
+          <p class="small muted">
+            Clé : <span class="secret">{{ e.secret }}</span>
+          </p>
+        </div>
+      }
+
+      @if (error(); as message) {
+        <p class="alert" role="alert">{{ message }}</p>
+      }
+
+      <div class="field">
+        <label for="code">Code à 6 chiffres</label>
+        <input
+          id="code"
+          class="code"
+          type="text"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="6"
+          formControlName="code"
+          [attr.aria-invalid]="form.controls.code.touched && form.controls.code.invalid"
+        />
+      </div>
+
+      <button class="btn btn-primary wide" type="submit" [disabled]="busy()">
+        {{ busy() ? 'Vérification…' : 'Valider' }}
+      </button>
+    </form>
+  }
+</main>

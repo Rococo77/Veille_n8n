@@ -1,0 +1,61 @@
+.auth {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+}
+
+.brand {
+  font-family: var(--font-read);
+  font-size: var(--step-3);
+  text-align: center;
+}
+
+form {
+  width: min(24rem, 100%);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+}
+
+form h2 {
+  margin-bottom: var(--space-4);
+}
+
+.wide {
+  width: 100%;
+  justify-content: center;
+}
+
+.enroll {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.enroll ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+canvas {
+  justify-self: center;
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.secret {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  word-break: break-all;
+  font-size: var(--step--1);
+  user-select: all;
+}
+
+.code {
+  font-size: var(--step-2);
+  letter-spacing: 0.3em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
