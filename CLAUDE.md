@@ -78,43 +78,41 @@ Ne pas passer à SQLite ni à `create_all`.
   - Backend complet, 28 tests passent.
   - Build Angular prod OK.
   - Migrations `0001` et `0002`.
+- **Déployé (2026-09-25)** :
+  - Supabase : projet `veille` (`pcvnjayllvarhqpzhfff`, eu-west-3), rôle `veille_app`, pooler
+    session `aws-1-eu-west-3.pooler.supabase.com:5432`. Migrations à `0002`, RLS actif,
+    `anon` sans droits. Tables propriété de `veille_app` : le rôle `postgres` (SQL Editor, MCP)
+    n'y a pas accès sans `GRANT veille_app TO postgres` + `SET ROLE veille_app`.
+  - Render : service `veille-api` (`srv-dar8t4bncjis73cj3400`), Francfort, gratuit,
+    https://veille-api-6wcq.onrender.com, auto-deploy sur la branche `claude/fervent-sagan-1c0w1h`
+    (à basculer sur `main` après merge).
+  - Premier admin créé (2FA à enrôler à la première connexion).
+  - Recette API de bout en bout sur Render : 29/29 (login, 2FA + rotation, CSRF, rôles, SSRF,
+    jeton n8n, ingestion hostile, idempotence, fil filtré, cascade, logout).
 - **n8n** :
-  - Workflow `FzbwhZhjtlNsdbvm` « Veille RSS → site (zero trust) » : créé, **non publié**.
-    À régler : nœud Config (`api_base`) et credential Bearer « Veille site - jeton n8n ».
+  - Workflow `FzbwhZhjtlNsdbvm` « Veille RSS → site (zero trust) » : `api_base` = URL Render.
+    **Non publié** : il manque la credential Bearer « Veille site - jeton n8n ».
+  - Workflow `QvnqMXLP50qZDhen` « Veille keep-alive Render » : publié (10 min).
   - Ancien workflow `out5DZTK69nHIX9x` (Data Tables) : encore publié. À dépublier une fois
     le nouveau en service.
+- **Vercel** : projet pas encore créé (connecteur sans droits d'écriture sur l'équipe).
+  `frontend/vercel.json` pointe déjà sur Render.
 - **Jamais vu dans un navigateur** : le rendu visuel reste à valider.
 
 ## À faire (dans l'ordre)
 
-1. **Adapter à Render** :
-   - Dans le `CMD` du `backend/Dockerfile`, remettre `alembic upgrade head &&` avant uvicorn.
-     Une seule instance en gratuit : pas de migrations en parallèle, et le pre-deploy de
-     Render est payant.
-   - Ajouter un `render.yaml` : service Docker, `rootDir: backend`, variables en `sync: false`.
-   - Réécrire la section 2 du `README.md`, qui décrit encore Cloud Run.
-2. **`frontend/vercel.json`** : remplacer la destination du rewrite `/api/:path*` par l'URL Render.
-3. **Keep-alive dans n8n**, pas dans l'API : un process endormi ne peut pas se réveiller seul.
-   - Workflow planifié **toutes les 10 min** (pas 15 : c'est pile la limite d'endormissement)
-     → `GET <render>/api/health`.
-   - Coût : environ 744 h/mois pour 750 h gratuites par workspace, donc **un seul** service
-     gratuit possible dans le workspace.
-4. **Supabase** :
-   - `CREATE ROLE veille_app LOGIN PASSWORD '…'; GRANT USAGE, CREATE ON SCHEMA public TO veille_app;`
-   - URL de connexion : `postgresql+asyncpg://veille_app.<ref>:<pwd>@aws-0-<region>.pooler.supabase.com:5432/postgres?ssl=require`
-5. **Premier admin** : `veille-admin create-admin --email …`, avec `VEILLE_DATABASE_URL` pointée
-   sur Supabase.
-6. **n8n** :
-   - Renseigner `api_base` et le jeton Bearer dans le workflow `FzbwhZhjtlNsdbvm`.
-   - Le publier, puis dépublier `out5DZTK69nHIX9x`.
-7. **Recette dans le navigateur** :
+1. **Vercel** : créer le projet (Root Directory `frontend`, dépôt `Rococo77/Veille_n8n`).
+2. **n8n** : credential Bearer, publier `FzbwhZhjtlNsdbvm`, dépublier `out5DZTK69nHIX9x`.
+3. **Recette dans le navigateur** :
    - Parcours complet : connexion → enrôlement 2FA → création thème/groupe/source → premier
      relevé n8n → fil filtré.
    - Vérifier dans la console qu'aucune violation CSP n'apparaît.
+4. **Durcissements** : sémaphore argon2 (64 Mio par vérification sur 512 Mo), verrouillage
+   plafonné à ~15 min, purge `articles`/`audit_events` via un endpoint interne appelé par n8n,
+   pare-feu de sortie du conteneur n8n (rebinding DNS et redirections contournent `url_policy.py`).
 
 ## Points non vérifiés ([PROBABLE])
 
 - Vercel transmet-il `Set-Cookie` et un en-tête `Host` accepté par Render sur un rewrite externe ?
   À tester : le cookie `__Host-veille_session` doit apparaître après la connexion.
-- Le format d'utilisateur `veille_app.<project-ref>` via le pooler Supabase pour un rôle personnalisé.
 - Limites actuelles de l'offre gratuite Render (750 h/mois, endormissement après 15 min).
