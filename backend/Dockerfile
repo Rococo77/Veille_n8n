@@ -22,8 +22,9 @@ COPY alembic.ini ./
 COPY alembic ./alembic
 USER 10001
 EXPOSE 8080
-# Cloud Run injecte PORT. Les migrations ne tournent PAS au démarrage : plusieurs instances
-# à froid lanceraient Alembic en parallèle. Elles passent par un job dédié (voir README).
-# Derrière Cloud Run + Vercel, request.client.host n'est qu'informatif (journal d'audit) :
+# Render injecte PORT. Migrations au démarrage : une seule instance en offre gratuite, donc
+# pas de course entre migrations, et le pre-deploy de Render est payant. Si le service passe
+# un jour à plusieurs instances, sortir `alembic upgrade head` du CMD.
+# Derrière Render + Vercel, request.client.host n'est qu'informatif (journal d'audit) :
 # aucune décision de sécurité ne repose sur l'IP.
-CMD ["sh", "-c", "exec uvicorn veille.main:app_factory --factory --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers --forwarded-allow-ips='*' --no-server-header"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn veille.main:app_factory --factory --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers --forwarded-allow-ips='*' --no-server-header"]

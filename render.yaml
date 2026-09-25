@@ -1,0 +1,21 @@
+# Blueprint Render : https://render.com/docs/blueprint-spec
+# Les secrets sont en `sync: false` : Render les demande à la création, ils ne vivent jamais dans git.
+services:
+  - type: web
+    name: veille-api
+    runtime: docker
+    plan: free
+    # Francfort : la région Render la plus proche de Supabase eu-west-3 (Paris).
+    region: frankfurt
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: VEILLE_DATABASE_URL
+        sync: false
+      - key: VEILLE_TOTP_ENCRYPTION_KEY
+        sync: false
+      - key: VEILLE_INTERNAL_TOKEN_SHA256
+        sync: false
