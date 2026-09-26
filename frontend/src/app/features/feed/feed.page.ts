@@ -15,10 +15,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../../core/auth.store';
 import { CatalogApi } from '../../core/api';
 import { FeedStore } from '../../core/feed.store';
+import { LastVisit } from '../../core/last-visit';
 import {
   Article,
   ArticleFilters,
   Group,
+  GroupDetail,
   Theme,
   VEILLE_TYPES,
   VeilleType,
@@ -51,27 +53,6 @@ function dayKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-const LAST_VISIT_KEY = 'veille:derniere-visite';
-
-// Simple confort d'affichage propre à ce navigateur : le stockage peut être indisponible
-// (navigation privée, stockage bloqué) sans que le fil en dépende.
-function readLastVisit(): number | null {
-  try {
-    const value = Number(localStorage.getItem(LAST_VISIT_KEY));
-    return Number.isFinite(value) && value > 0 ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeLastVisit(value: number): void {
-  try {
-    localStorage.setItem(LAST_VISIT_KEY, String(value));
-  } catch {
-    // Stockage indisponible : le marquage « nouveau » est simplement absent.
-  }
-}
-
 @Component({
   selector: 'app-feed-page',
   imports: [RouterLink, ReactiveFormsModule],
@@ -85,6 +66,7 @@ export class FeedPage {
   private readonly catalog = inject(CatalogApi);
   protected readonly auth = inject(AuthStore);
   protected readonly feed = inject(FeedStore);
+  private readonly lastVisit = inject(LastVisit);
 
   protected readonly types = VEILLE_TYPES;
   protected readonly minQuery = MIN_QUERY;
@@ -126,10 +108,24 @@ export class FeedPage {
     Object.values(this.filters()).some((value) => value !== undefined),
   );
 
-  /** Le nom de la source filtrée n'est connu que par les articles affichés. */
+  /** Sources proposées au filtre : celles du groupe choisi (pas d'API « toutes les sources »). */
+  private readonly groupDetailRes = httpResource<GroupDetail>(() => {
+    const id = this.filters().group_id;
+    if (!id) return undefined;
+    this.catalog.version();
+    return `/api/groups/${encodeURIComponent(id)}`;
+  });
+  protected readonly sources = computed(() =>
+    this.filters().group_id ? (valueOr(this.groupDetailRes, undefined)?.sources ?? []) : [],
+  );
+
   private readonly sourceName = computed(() => {
     const id = this.filters().source_id;
-    return id ? this.feed.items().find((a) => a.source.id === id)?.source.name : undefined;
+    if (!id) return undefined;
+    return (
+      this.sources().find((s) => s.id === id)?.name ??
+      this.feed.items().find((a) => a.source.id === id)?.source.name
+    );
   });
 
   /** Tous les filtres actifs, dans l'ordre du plus large au plus précis. */
@@ -215,15 +211,12 @@ export class FeedPage {
     return [f.theme_id, f.group_id, f.source_id, f.q].filter(Boolean).length;
   });
 
-  /** Date de la visite précédente : tout ce qui est paru depuis est marqué « nouveau ». */
-  protected readonly lastVisit = readLastVisit();
-
+  /** Relevé depuis la visite précédente : marqué « nouveau ». */
   protected isNew(article: Article): boolean {
-    return this.lastVisit !== null && new Date(article.published_at).getTime() > this.lastVisit;
+    return this.lastVisit.isNew(article.fetched_at);
   }
 
   constructor() {
-    writeLastVisit(Date.now());
     // Arrivée par un lien filtré (thème, groupe, source, recherche) : montrer ces filtres.
     if (this.refineCount() > 0) this.refineOpen.set(true);
     effect(() => {
@@ -245,9 +238,12 @@ export class FeedPage {
   }
 
   protected setFilter(key: 'type' | 'theme' | 'group' | 'source', value: string): void {
+    const queryParams: Record<string, string | null> = { [key]: value || null };
+    // Une source n'a de sens que dans son groupe : changer de groupe la retire.
+    if (key === 'group') queryParams['source'] = null;
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { [key]: value || null },
+      queryParams,
       queryParamsHandling: 'merge',
     });
   }

@@ -62,10 +62,10 @@ vérité ; n8n n'est qu'un worker sans état.
 ```bash
 # Backend : Postgres local via `docker compose up -d db`
 cd backend && python -m venv .venv && . .venv/bin/activate && pip install -e '.[dev]'
-VEILLE_TEST_DATABASE_URL=postgresql+asyncpg://veille:veille@127.0.0.1:5432/veille pytest   # 28 tests
+VEILLE_TEST_DATABASE_URL=postgresql+asyncpg://veille:veille@127.0.0.1:5432/veille pytest   # 30 tests
 ruff check src tests alembic && ruff format --check src tests alembic
 
-# Frontend (Node ≥ 22.22.3 ou 24)
+# Frontend (Node ≥ 22.22.3 ou 24 ; sinon `npx -y node@24 node_modules/@angular/cli/bin/ng.js build`)
 cd frontend && npm ci && npx ng build && npx ng serve   # proxy /api → :8000
 ```
 
@@ -75,7 +75,14 @@ Ne pas passer à SQLite ni à `create_all`.
 ## État
 
 - **Fait et vérifié** :
-  - Backend complet, 28 tests passent.
+  - Backend complet, 30 tests passent.
+  - Durcissements (2026-09-26) : argon2 hors boucle d'événements (2 calculs max, 503 au-delà
+    de 5 s d'attente), verrouillage fixe 15 min + compteur atomique, `POST /api/internal/purge`
+    (rétention `VEILLE_ARTICLE_RETENTION_DAYS`=180 / `VEILLE_AUDIT_RETENTION_DAYS`=365).
+  - Front « fil de dépêches » (contrat `.impeccable/surfaces/frontend-src-app.md`) : fil et
+    shell refaits. « Nouveau » = `fetched_at` après la visite précédente (`core/last-visit.ts`).
+    Mobile : déconnexion et liens admin sur la page Compte (la barre d'onglets n'a que 4
+    entrées). Revue finale du contrat et `DESIGN.md` : pas faits.
   - Build Angular prod OK.
   - Migrations `0001` et `0002`.
 - **Déployé (2026-09-25)** :
@@ -103,11 +110,12 @@ Ne pas passer à SQLite ni à `create_all`.
 
 ## À faire (dans l'ordre)
 
-1. **Recette fonctionnelle** : création thème/groupe/source → premier relevé n8n → fil filtré.
-2. **Durcissements** : sémaphore argon2 (64 Mio par vérification sur 512 Mo), verrouillage
-   plafonné à ~15 min, purge `articles`/`audit_events` via un endpoint interne appelé par n8n,
-   alerte n8n sur échec de push, pare-feu de sortie du conteneur n8n (rebinding DNS et
-   redirections contournent `url_policy.py`).
+1. **Recette fonctionnelle** : thèmes et groupes créés depuis le site ; reste la première
+   source → premier relevé n8n → fil filtré.
+2. **Alerte n8n** : un push en échec fait échouer l'exécution (nœud « Fail If Any Push
+   Failed »), mais aucun canal de notification n'est branché (pas de credential mail/Slack).
+3. **Pare-feu de sortie du conteneur n8n** : le rebinding DNS et les redirections
+   contournent `url_policy.py`.
 
 ## Points non vérifiés ([PROBABLE])
 

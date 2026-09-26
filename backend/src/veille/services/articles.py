@@ -80,6 +80,7 @@ async def list_articles(
             title=a.title,
             snippet=a.snippet,
             published_at=a.published_at,
+            fetched_at=a.fetched_at,
             source=ArticleSourceRef(id=s.id, name=s.name),
             group=ArticleGroupRef(id=g.id, name=g.name, veille_type=g.veille_type),  # type: ignore[arg-type]
             theme=ThemeOut.model_validate(t),

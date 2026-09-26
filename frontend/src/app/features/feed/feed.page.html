@@ -14,9 +14,8 @@
         [class.active]="filters().veille_type === d.value"
         [class.empty]="d.groups === 0"
         [attr.aria-current]="filters().veille_type === d.value ? 'page' : null"
-        >{{ d.label }}<span class="count num" [attr.aria-label]="d.groups + ' groupes'">{{
-          d.groups
-        }}</span></a
+        >{{ d.label
+        }}<span class="count num" [attr.aria-label]="d.groups + ' groupes'">{{ d.groups }}</span></a
       >
     }
   </div>
@@ -97,6 +96,23 @@
           }
         </select>
       </div>
+      <div class="field">
+        <label for="f-source">Source</label>
+        <select
+          id="f-source"
+          [disabled]="!filters().group_id"
+          [attr.aria-describedby]="filters().group_id ? null : 'f-source-hint'"
+          (change)="setFilter('source', $any($event.target).value)"
+        >
+          <option value="" [selected]="!filters().source_id">Toutes les sources</option>
+          @for (s of sources(); track s.id) {
+            <option [value]="s.id" [selected]="s.id === filters().source_id">{{ s.name }}</option>
+          }
+        </select>
+        @if (!filters().group_id) {
+          <span id="f-source-hint" class="hint">Choisissez d'abord un groupe.</span>
+        }
+      </div>
     </form>
   </header>
 
@@ -153,7 +169,9 @@
               <p class="snippet">{{ a.snippet }}</p>
             }
             <p class="origin small">
-              <a [routerLink]="[]" [queryParams]="{ source: a.source.id }">{{ a.source.name }}</a>
+              <a [routerLink]="[]" [queryParams]="{ group: a.group.id, source: a.source.id }">{{
+                a.source.name
+              }}</a>
               <span class="sep" aria-hidden="true">·</span>
               <span class="visually-hidden">groupe </span>
               <a [routerLink]="[]" [queryParams]="{ group: a.group.id }">{{ a.group.name }}</a>
@@ -193,8 +211,8 @@
                 <span class="step num" aria-hidden="true">1</span>
                 <div class="body">
                   <p>
-                    <strong>Créer un thème</strong> : le sujet suivi, par exemple «&nbsp;Cloud&nbsp;»
-                    ou «&nbsp;Concurrents&nbsp;».
+                    <strong>Créer un thème</strong> : le sujet suivi, par exemple
+                    «&nbsp;Cloud&nbsp;» ou «&nbsp;Concurrents&nbsp;».
                   </p>
                   @if (emptyReason() === 'no-theme') {
                     <a class="btn btn-primary" routerLink="/themes">Créer un thème</a>
@@ -232,8 +250,8 @@
           } @else {
             <h2 id="empty-title">La veille n'est pas encore configurée</h2>
             <p class="muted">
-              Aucune source n'est suivie pour l'instant. Les éditeurs de l'équipe ajoutent les
-              flux ; les dépêches arriveront ici dès le premier relevé.
+              Aucune source n'est suivie pour l'instant. Les éditeurs de l'équipe ajoutent les flux
+              ; les dépêches arriveront ici dès le premier relevé.
             </p>
           }
         }
@@ -245,9 +263,7 @@
     @if (feed.loading() && feed.items().length > 0) {
       <p class="muted">Chargement des dépêches plus anciennes…</p>
     } @else if (feed.hasMore()) {
-      <button type="button" class="btn" (click)="feed.loadMore()">
-        Dépêches plus anciennes
-      </button>
+      <button type="button" class="btn" (click)="feed.loadMore()">Dépêches plus anciennes</button>
     }
   </div>
 </div>

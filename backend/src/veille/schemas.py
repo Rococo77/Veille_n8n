@@ -164,6 +164,9 @@ class ArticleOut(Out):
     title: str
     snippet: str
     published_at: datetime
+    # Date d'arrivée sur le site : c'est elle qui dit si l'article est nouveau pour le
+    # lecteur, un article peut être relevé des jours après sa parution.
+    fetched_at: datetime
     source: ArticleSourceRef
     group: ArticleGroupRef
     theme: ThemeOut

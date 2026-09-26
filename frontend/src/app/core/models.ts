@@ -71,6 +71,7 @@ export interface Article {
   title: string;
   snippet: string;
   published_at: string;
+  fetched_at: string;
   source: { id: string; name: string };
   group: { id: string; name: string; veille_type: VeilleType };
   theme: Theme;

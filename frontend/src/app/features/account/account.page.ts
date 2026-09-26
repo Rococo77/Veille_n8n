@@ -8,6 +8,8 @@ import {
   Validators,
 } from '@angular/forms';
 
+import { Router, RouterLink } from '@angular/router';
+
 import { AuthStore } from '../../core/auth.store';
 import { problemMessage } from '../../core/problem';
 
@@ -19,11 +21,24 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-account-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1>Mon compte</h1>
     <p class="muted">Connecté en tant que {{ auth.me()?.email }}.</p>
+
+    <!-- Sur mobile, la barre d'onglets n'a que quatre entrées : cette page porte le reste. -->
+    <div class="session-actions">
+      @if (auth.isAdmin()) {
+        <nav class="admin-links" aria-label="Administration">
+          <a routerLink="/admin/utilisateurs">Utilisateurs</a>
+          <a routerLink="/admin/journal">Journal d'audit</a>
+        </nav>
+      }
+      <button type="button" class="btn" [disabled]="loggingOut()" (click)="logout()">
+        Se déconnecter
+      </button>
+    </div>
 
     <form class="panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <h2>Changer de mot de passe</h2>
@@ -64,18 +79,15 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
           formControlName="confirm"
           autocomplete="new-password"
           [attr.aria-invalid]="form.touched && form.hasError('mismatch')"
-          [attr.aria-describedby]="form.touched && form.hasError('mismatch') ? 'a-confirm-error' : null"
+          [attr.aria-describedby]="
+            form.touched && form.hasError('mismatch') ? 'a-confirm-error' : null
+          "
         />
         @if (form.touched && form.hasError('mismatch')) {
           <span id="a-confirm-error" class="field-error">Les deux mots de passe diffèrent.</span>
         }
       </div>
-      <button
-        class="btn btn-primary"
-        type="submit"
-        [disabled]="busy()"
-        [attr.aria-busy]="busy()"
-      >
+      <button class="btn btn-primary" type="submit" [disabled]="busy()" [attr.aria-busy]="busy()">
         Changer le mot de passe
       </button>
     </form>
@@ -88,11 +100,30 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
     .panel {
       margin-top: var(--space-5);
     }
+    .session-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+    }
+    .admin-links {
+      display: flex;
+      gap: var(--space-4);
+    }
+    .admin-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
   `,
 })
 export class AccountPage {
   protected readonly auth = inject(AuthStore);
+  private readonly router = inject(Router);
   protected readonly busy = signal(false);
+  protected readonly loggingOut = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly done = signal(false);
 
@@ -125,6 +156,18 @@ export class AccountPage {
       this.error.set(problemMessage(error));
     } finally {
       this.busy.set(false);
+    }
+  }
+
+  async logout(): Promise<void> {
+    this.loggingOut.set(true);
+    try {
+      await this.auth.logout();
+    } finally {
+      // AuthStore efface l'état local même si l'appel échoue : on quitte l'espace connecté
+      // dans tous les cas, comme le fait le bouton du bandeau.
+      this.loggingOut.set(false);
+      await this.router.navigateByUrl('/connexion');
     }
   }
 }

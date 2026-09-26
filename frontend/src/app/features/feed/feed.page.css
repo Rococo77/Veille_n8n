@@ -80,12 +80,16 @@
 
 .refine {
   display: none;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0 var(--space-4);
   margin-top: var(--space-4);
 }
 .refine.open {
   display: grid;
+}
+/* Recherche sur sa propre ligne, puis thème / groupe / source alignés. */
+.refine .search {
+  grid-column: 1 / -1;
 }
 .refine .field {
   margin-bottom: var(--space-2);
@@ -272,9 +276,6 @@
   }
   .refine {
     grid-template-columns: 1fr 1fr;
-  }
-  .refine .search {
-    grid-column: 1 / -1;
   }
   .title {
     font-size: var(--step-0);
