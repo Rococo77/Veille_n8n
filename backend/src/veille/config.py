@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     session_absolute_hours: int = Field(default=12, ge=1, le=72)
     pre_mfa_minutes: int = Field(default=5, ge=1, le=15)
     totp_issuer: str = "Veille"
+    # Rétention fixée côté site, jamais par l'appelant : un jeton n8n volé ne doit pas
+    # pouvoir vider la base en demandant une rétention nulle.
+    article_retention_days: int = Field(default=180, ge=7, le=3650)
+    audit_retention_days: int = Field(default=365, ge=30, le=3650)
     enable_docs: bool = False
 
     @property

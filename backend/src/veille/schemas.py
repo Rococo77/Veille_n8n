@@ -237,3 +237,9 @@ class IngestIn(Strict):
 class IngestOut(Out):
     inserted: int
     rejected: int
+
+
+class PurgeOut(Out):
+    articles: int
+    audit_events: int
+    sessions: int

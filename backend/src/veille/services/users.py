@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from veille.errors import DomainError, conflict, constraint_name, not_found
 from veille.models import AuditEvent, User
 from veille.schemas import AuditOut, UserIn, UserOut, UserPatch
-from veille.security import hash_password
+from veille.security import hash_password_async
 from veille.services import audit, sessions
 
 
@@ -21,7 +21,9 @@ async def create_user(
 ) -> UserOut:
     if data.password.lower() == data.email:
         raise DomainError(422, "Mot de passe refusé", "Identique à l'email.", "weak-password")
-    user = User(email=data.email, password_hash=hash_password(data.password), role=data.role)
+    user = User(
+        email=data.email, password_hash=await hash_password_async(data.password), role=data.role
+    )
     db.add(user)
     try:
         await db.flush()

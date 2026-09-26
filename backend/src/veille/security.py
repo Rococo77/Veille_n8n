@@ -2,7 +2,11 @@ import hashlib
 import hmac
 import secrets
 import time
+from collections.abc import Callable
+from typing import TypeVar
 
+import anyio
+import anyio.to_thread
 import pyotp
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
@@ -15,6 +19,18 @@ _DUMMY_HASH = _hasher.hash(secrets.token_urlsafe(16))
 
 TOTP_PERIOD = 30
 
+# argon2 (profil par défaut : 64 Mio, t=3, p=4) sur l'offre Render à 512 Mo : au-delà de
+# deux calculs simultanés, un afflux de logins suffit à faire tuer le conteneur (OOM).
+# Le calcul part dans un thread : exécuté dans la boucle, il gèlerait toutes les requêtes.
+_ARGON2_SLOTS = anyio.CapacityLimiter(2)
+# Borne l'attente : chaque login en file garde une requête ouverte ; mieux vaut un 503
+# immédiat qu'une file illimitée.
+_ARGON2_QUEUE_TIMEOUT_S = 5.0
+
+
+class HasherBusyError(RuntimeError):
+    """Tous les créneaux argon2 sont occupés au-delà du délai d'attente."""
+
 
 def hash_password(password: str) -> str:
     return _hasher.hash(password)
@@ -25,6 +41,29 @@ def verify_password(password_hash: str | None, password: str) -> bool:
         return _hasher.verify(password_hash or _DUMMY_HASH, password) and password_hash is not None
     except (VerifyMismatchError, VerificationError, InvalidHashError):
         return False
+
+
+T = TypeVar("T")
+
+
+async def _run_argon2(fn: Callable[[], T]) -> T:
+    try:
+        with anyio.fail_after(_ARGON2_QUEUE_TIMEOUT_S):
+            await _ARGON2_SLOTS.acquire()
+    except TimeoutError as exc:
+        raise HasherBusyError from exc
+    try:
+        return await anyio.to_thread.run_sync(fn)
+    finally:
+        _ARGON2_SLOTS.release()
+
+
+async def verify_password_async(password_hash: str | None, password: str) -> bool:
+    return await _run_argon2(lambda: verify_password(password_hash, password))
+
+
+async def hash_password_async(password: str) -> str:
+    return await _run_argon2(lambda: hash_password(password))
 
 
 def password_needs_rehash(password_hash: str) -> bool:

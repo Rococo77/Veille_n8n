@@ -1,7 +1,11 @@
+import asyncio
+from datetime import timedelta
+
 import pyotp
 from sqlalchemy import select
 
 from tests.conftest import PASSWORD, create_user, make_client
+from veille.db import utcnow
 from veille.models import User
 
 
@@ -62,6 +66,24 @@ async def test_account_locks_after_five_failures_even_with_right_password(anon, 
     db.expire_all()
     user = await db.scalar(select(User).where(User.email == "bob@example.org"))
     assert user is not None and user.locked_until is not None
+
+
+async def test_parallel_failures_are_all_counted_and_lock_is_capped(anon, db):
+    await create_user(db, "dave@example.org", "viewer")
+    wrong = {"email": "dave@example.org", "password": "wrong-password"}
+    # Sous le seuil, en parallèle : un compteur en read-modify-write perdrait des échecs.
+    statuses = await asyncio.gather(*(anon.post("/api/auth/login", json=wrong) for _ in range(4)))
+    assert [r.status_code for r in statuses] == [401] * 4
+    db.expire_all()
+    user = await db.scalar(select(User).where(User.email == "dave@example.org"))
+    assert user is not None and user.failed_logins == 4 and user.locked_until is None
+
+    await anon.post("/api/auth/login", json=wrong)
+    db.expire_all()
+    user = await db.scalar(select(User).where(User.email == "dave@example.org"))
+    assert user is not None and user.locked_until is not None
+    # Verrou court : le déclencher ne doit pas bloquer le vrai titulaire pendant des heures.
+    assert user.locked_until - utcnow() <= timedelta(minutes=15)
 
 
 async def test_mfa_brute_force_kills_pre_session(anon, db, settings):

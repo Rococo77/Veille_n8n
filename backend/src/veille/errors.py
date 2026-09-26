@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from veille.security import HasherBusyError
+
 PROBLEM_MEDIA_TYPE = "application/problem+json"
 logger = logging.getLogger("veille")
 
@@ -58,6 +60,14 @@ def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def _domain(_: Request, exc: DomainError) -> JSONResponse:
         return problem_response(exc.status, exc.title, exc.detail, exc.code)
+
+    @app.exception_handler(HasherBusyError)
+    async def _busy(_: Request, __: HasherBusyError) -> JSONResponse:
+        response = problem_response(
+            503, "Serveur occupé", "Réessayez dans quelques secondes.", "busy"
+        )
+        response.headers["Retry-After"] = "5"
+        return response
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
