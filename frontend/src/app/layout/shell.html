@@ -1,110 +1,80 @@
 <a class="skip" href="#contenu">Aller au contenu</a>
 
-<div class="frame">
-  <header class="topbar">
-    <a class="brand" routerLink="/">Veille</a>
-    <button
-      type="button"
-      class="menu-toggle"
-      aria-controls="navigation"
-      [attr.aria-expanded]="menuOpen()"
-      (click)="toggleMenu()"
-    >
-      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
-        @if (menuOpen()) {
-          <path d="M6 6l12 12M18 6L6 18" />
-        } @else {
-          <path d="M4 7h16M4 12h16M4 17h16" />
+<header class="masthead">
+  <div class="page masthead-inner">
+    <a class="wordmark" routerLink="/" aria-label="Veille, retour au fil">Veille</a>
+
+    <nav class="primary" aria-label="Navigation principale">
+      <a
+        routerLink="/"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' }"
+        >Fil</a
+      >
+      <a routerLink="/groupes" routerLinkActive="active">
+        Groupes et sources
+        @if (failing() > 0) {
+          <span class="alarm num" [attr.aria-label]="failing() + ' sources en erreur'">{{
+            failing()
+          }}</span>
         }
-      </svg>
-      Menu
-      @if (failing() > 0) {
-        <span class="badge" [attr.aria-label]="failing() + ' sources en erreur'">{{
-          failing()
-        }}</span>
+      </a>
+      @if (auth.isEditor()) {
+        <a routerLink="/themes" routerLinkActive="active">Thèmes</a>
       }
-    </button>
-  </header>
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin/utilisateurs" routerLinkActive="active">Utilisateurs</a>
+        <a routerLink="/admin/journal" routerLinkActive="active">Journal</a>
+      }
+    </nav>
 
-  <nav id="navigation" class="rail" [class.open]="menuOpen()" aria-label="Navigation principale">
-    <a class="brand rail-brand" routerLink="/">Veille</a>
+    <div class="account">
+      <span class="cadence">Relevés toutes les 2&nbsp;h</span>
+      <a class="email" routerLink="/compte" routerLinkActive="active">{{ auth.me()?.email }}</a>
+      <button type="button" class="btn-link logout" (click)="logout()">Se déconnecter</button>
+    </div>
+  </div>
+</header>
 
-    <section aria-labelledby="nav-types">
-      <h2 id="nav-types" class="rail-heading">Par type de veille</h2>
-      <ul>
-        <li>
-          <a
-            routerLink="/"
-            [queryParams]="{}"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: true }"
-            >Tout le fil</a
-          >
-        </li>
-        @for (t of types(); track t.value) {
-          <li>
-            <a
-              routerLink="/"
-              [queryParams]="{ type: t.value }"
-              routerLinkActive="active"
-              [class.empty]="t.groups === 0"
-            >
-              <span>{{ t.label }}</span>
-              <span class="count" [attr.aria-label]="t.groups + ' groupes'">{{ t.groups }}</span>
-            </a>
-          </li>
-        }
-      </ul>
-    </section>
+<main #main id="contenu" class="main" tabindex="-1">
+  <router-outlet />
+</main>
 
-    @if (themeList().length) {
-      <section aria-labelledby="nav-themes">
-        <h2 id="nav-themes" class="rail-heading">Par thème</h2>
-        <ul>
-          @for (theme of themeList(); track theme.id) {
-            <li>
-              <a routerLink="/" [queryParams]="{ theme: theme.id }" routerLinkActive="active">
-                <span class="swatch" [style.background]="theme.color" aria-hidden="true"></span>
-                <span>{{ theme.name }}</span>
-              </a>
-            </li>
-          }
-        </ul>
-      </section>
+<nav class="tabbar" aria-label="Navigation principale">
+  <a
+    routerLink="/"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' }"
+  >
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" /></svg>
+    <span>Fil</span>
+  </a>
+  <a routerLink="/groupes" routerLinkActive="active">
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z" />
+    </svg>
+    <span>Groupes</span>
+    @if (failing() > 0) {
+      <span class="alarm num" [attr.aria-label]="failing() + ' sources en erreur'">{{
+        failing()
+      }}</span>
     }
-
-    <section aria-labelledby="nav-manage">
-      <h2 id="nav-manage" class="rail-heading">Gérer</h2>
-      <ul>
-        <li>
-          <a routerLink="/groupes" routerLinkActive="active">
-            <span>Groupes et sources</span>
-            @if (failing() > 0) {
-              <span class="count failing" [attr.aria-label]="failing() + ' sources en erreur'">
-                {{ failing() }}
-              </span>
-            }
-          </a>
-        </li>
-        @if (auth.isEditor()) {
-          <li><a routerLink="/themes" routerLinkActive="active">Thèmes et couleurs</a></li>
-        }
-        @if (auth.isAdmin()) {
-          <li><a routerLink="/admin/utilisateurs" routerLinkActive="active">Utilisateurs</a></li>
-          <li><a routerLink="/admin/journal" routerLinkActive="active">Journal d'audit</a></li>
-        }
-      </ul>
-    </section>
-
-    <footer class="who">
-      <a routerLink="/compte" class="email">{{ auth.me()?.email }}</a>
-      <button type="button" class="btn-link small" (click)="logout()">Se déconnecter</button>
-    </footer>
-  </nav>
-
-  <main #main id="contenu" class="main" tabindex="-1">
-    <router-outlet />
-  </main>
-</div>
+  </a>
+  @if (auth.isEditor()) {
+    <a routerLink="/themes" routerLinkActive="active">
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M5 5h6v6H5zM13 13h6v6h-6zM13 5l6 6M19 5l-6 6" />
+      </svg>
+      <span>Thèmes</span>
+    </a>
+  }
+  <a routerLink="/compte" routerLinkActive="active">
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c1.2-3.6 3.9-5.5 7-5.5s5.8 1.9 7 5.5" />
+    </svg>
+    <span>Compte</span>
+  </a>
+</nav>
 
 <app-confirm-dialog />

@@ -1,6 +1,6 @@
 /**
  * Teintes proposées par défaut : chacune garde au moins 3:1 de contraste sur le fond clair
- * (#f2f4f6) et sur le fond sombre (#101419), donc reste visible dans les deux modes.
+ * (#ffffff) et sur le fond sombre (#151515), donc reste visible dans les deux modes.
  */
 export const THEME_PALETTE = [
   '#c05621',
@@ -13,8 +13,8 @@ export const THEME_PALETTE = [
   '#0e7490',
 ] as const;
 
-const PAPER_LIGHT = '#f2f4f6';
-const PAPER_DARK = '#101419';
+const PAPER_LIGHT = '#ffffff';
+const PAPER_DARK = '#151515';
 export const MIN_THEME_CONTRAST = 3;
 
 function linear(hexPair: string): number {

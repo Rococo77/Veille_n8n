@@ -29,6 +29,8 @@ import { valueOr } from '../../core/resource';
 interface DaySection {
   key: string;
   label: string;
+  /** Date complète à côté de « Aujourd'hui » / « Hier ». */
+  detail: string | null;
   articles: Article[];
 }
 
@@ -42,10 +44,32 @@ const dayFormat = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',
   month: 'long',
 });
+const shortDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long' });
 const timeFormat = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
 function dayKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+const LAST_VISIT_KEY = 'veille:derniere-visite';
+
+// Simple confort d'affichage propre à ce navigateur : le stockage peut être indisponible
+// (navigation privée, stockage bloqué) sans que le fil en dépende.
+function readLastVisit(): number | null {
+  try {
+    const value = Number(localStorage.getItem(LAST_VISIT_KEY));
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLastVisit(value: number): void {
+  try {
+    localStorage.setItem(LAST_VISIT_KEY, String(value));
+  } catch {
+    // Stockage indisponible : le marquage « nouveau » est simplement absent.
+  }
 }
 
 @Component({
@@ -161,13 +185,14 @@ export class FeedPage {
       const key = dayKey(date);
       let section = sections.at(-1);
       if (!section || section.key !== key) {
-        const label =
-          key === dayKey(today)
-            ? "Aujourd'hui"
-            : key === dayKey(yesterday)
-              ? 'Hier'
-              : dayFormat.format(date);
-        section = { key, label, articles: [] };
+        const relative =
+          key === dayKey(today) ? "Aujourd'hui" : key === dayKey(yesterday) ? 'Hier' : null;
+        section = {
+          key,
+          label: relative ?? dayFormat.format(date),
+          detail: relative ? shortDate.format(date) : null,
+          articles: [],
+        };
         sections.push(section);
       }
       section.articles.push(article);
@@ -175,7 +200,32 @@ export class FeedPage {
     return sections;
   });
 
+  /** Desks : les six types de veille, avec le nombre de groupes rangés dessous. */
+  protected readonly desks = computed(() =>
+    VEILLE_TYPES.map((t) => ({
+      ...t,
+      groups: this.groups().filter((g) => g.veille_type === t.value).length,
+    })),
+  );
+
+  /** Filtres secondaires (thème, groupe, source, recherche) : repliés tant qu'ils sont vides. */
+  protected readonly refineOpen = signal(false);
+  protected readonly refineCount = computed(() => {
+    const f = this.filters();
+    return [f.theme_id, f.group_id, f.source_id, f.q].filter(Boolean).length;
+  });
+
+  /** Date de la visite précédente : tout ce qui est paru depuis est marqué « nouveau ». */
+  protected readonly lastVisit = readLastVisit();
+
+  protected isNew(article: Article): boolean {
+    return this.lastVisit !== null && new Date(article.published_at).getTime() > this.lastVisit;
+  }
+
   constructor() {
+    writeLastVisit(Date.now());
+    // Arrivée par un lien filtré (thème, groupe, source, recherche) : montrer ces filtres.
+    if (this.refineCount() > 0) this.refineOpen.set(true);
     effect(() => {
       const filters = this.filters();
       untracked(() => {
@@ -194,7 +244,7 @@ export class FeedPage {
     return veilleTypeLabel(value);
   }
 
-  protected setFilter(key: 'type' | 'theme' | 'group', value: string): void {
+  protected setFilter(key: 'type' | 'theme' | 'group' | 'source', value: string): void {
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { [key]: value || null },

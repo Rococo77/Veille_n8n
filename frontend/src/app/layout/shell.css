@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
 .skip {
   position: absolute;
   left: -999px;
@@ -5,187 +10,160 @@
 .skip:focus {
   left: var(--space-4);
   top: var(--space-4);
-  z-index: 20;
-  background: var(--surface);
+  z-index: 30;
   padding: var(--space-2) var(--space-3);
+  background: var(--paper);
+  border: 1px solid var(--ink);
 }
 
-.frame {
-  display: grid;
-  grid-template-columns: var(--rail) minmax(0, 1fr);
-  min-height: 100dvh;
-}
+/* --- Bandeau de tête ------------------------------------------------------------ */
 
-/* La barre compacte n'existe que sous 52rem. */
-.topbar {
-  display: none;
-}
-
-.rail {
+.masthead {
   position: sticky;
   top: 0;
-  height: 100dvh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-5) var(--space-4);
-  border-right: 1px solid var(--rule);
+  z-index: 20;
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
 }
-
-.brand {
-  font-family: var(--font-read);
-  font-size: var(--step-2);
-  font-weight: 700;
-  color: var(--ink);
-  text-decoration: none;
-  padding-inline: var(--space-2);
-}
-
-.rail-heading {
-  font-size: var(--step--1);
-  font-weight: 600;
-  color: var(--muted);
-  padding-inline: var(--space-2);
-  margin-bottom: var(--space-1);
-}
-
-.rail ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.rail li a {
+.masthead-inner {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-height: 2.25rem;
-  padding: 0.35rem var(--space-2);
-  border-radius: var(--radius);
-  color: var(--ink);
+  gap: var(--space-6);
+  min-height: 3.5rem;
+}
+
+.wordmark {
+  font-size: var(--step-1);
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   text-decoration: none;
-}
-.rail li a:hover {
-  background: var(--surface);
-}
-.rail li a.active {
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--rule);
-  font-weight: 600;
-}
-.rail li a.empty {
-  color: var(--muted);
-}
-
-.count {
-  margin-left: auto;
-  font-size: var(--step--1);
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.count.failing {
-  color: var(--alert);
-  font-weight: 700;
-}
-
-.who {
-  margin-top: auto;
-  display: grid;
-  gap: var(--space-1);
-  padding-inline: var(--space-2);
-  font-size: var(--step--1);
-}
-.who .email {
   color: var(--ink);
+}
+
+.primary {
+  display: flex;
+  align-self: stretch;
+  gap: var(--space-5);
+}
+.primary a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  /* Filet actif posé sur le filet du bandeau : même ligne, même épaisseur visuelle. */
+  box-shadow: inset 0 -3px 0 transparent;
+}
+.primary a:hover {
+  color: var(--ink);
+}
+.primary a.active {
+  color: var(--ink);
+  box-shadow: inset 0 -3px 0 var(--wire);
+}
+
+.alarm {
+  font-size: var(--step--2);
+  font-weight: 800;
+  color: var(--wire);
+}
+
+.account {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--step--1);
+  min-width: 0;
+}
+.cadence {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.email {
+  color: var(--ink);
+  max-width: 16rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.who .btn-link {
-  justify-self: start;
-  min-height: var(--target);
+.logout {
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .main {
-  padding: var(--space-6) var(--space-5);
   outline: none;
+  padding-bottom: var(--space-7);
 }
 
-@media (max-width: 52rem) {
-  .frame {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
-  }
+/* --- Barre d'onglets (mobile) --------------------------------------------------- */
 
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-2) var(--space-4);
-    background: var(--paper);
-    border-bottom: 1px solid var(--rule);
-  }
-  .topbar .brand {
-    font-size: var(--step-1);
-    padding-inline: 0;
-  }
+.tabbar {
+  display: none;
+}
 
-  .menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: var(--target);
-    padding: 0 var(--space-3);
-    font: inherit;
-    font-weight: 600;
-    color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--field);
-    border-radius: var(--radius);
-    cursor: pointer;
-  }
-  .menu-toggle svg {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-  }
-  .badge {
-    min-width: 1.4rem;
-    padding: 0 0.35rem;
-    border-radius: 999px;
-    background: var(--alert);
-    color: var(--surface);
-    font-size: var(--step--1);
-    font-variant-numeric: tabular-nums;
-    text-align: center;
-  }
-
-  /* Le fil d'abord : la navigation ne s'affiche que sur demande. */
-  .rail {
-    display: none;
-    position: static;
-    height: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
-    background: var(--paper);
-  }
-  .rail.open {
-    display: flex;
-  }
-  .rail-brand {
+@media (max-width: 60rem) {
+  .cadence {
     display: none;
   }
-  .rail li a {
-    min-height: var(--target);
+}
+
+@media (max-width: 48rem) {
+  .primary,
+  .account {
+    display: none;
+  }
+  .masthead-inner {
+    min-height: 3rem;
   }
 
   .main {
-    padding: var(--space-5) var(--space-4);
+    /* La barre fixe ne doit jamais masquer la dernière dépêche. */
+    padding-bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + var(--space-5));
+  }
+
+  .tabbar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 20;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--paper);
+    border-top: 1px solid var(--ink);
+  }
+  .tabbar a {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 2px;
+    min-height: var(--tabbar);
+    font-size: var(--step--2);
+    font-weight: 650;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .tabbar a.active {
+    color: var(--ink);
+    box-shadow: inset 0 3px 0 var(--wire);
+  }
+  .tabbar svg {
+    inline-size: 1.4rem;
+    block-size: 1.4rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .tabbar .alarm {
+    position: absolute;
+    top: 0.45rem;
+    left: calc(50% + 0.7rem);
   }
 }

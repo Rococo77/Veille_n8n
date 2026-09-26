@@ -1,205 +1,253 @@
-<header class="head">
-  <h1>{{ heading() }}</h1>
-  @if (activeFilters().length > 1) {
-    <p class="active-filters">
-      <span class="visually-hidden">Filtres actifs :</span>
-      @for (part of activeFilters(); track part; let last = $last) {
-        <span>{{ part }}</span>
-        @if (!last) {
-          <span class="sep" aria-hidden="true">·</span>
-        }
-      }
-    </p>
-  }
-
-  <form class="filters" [formGroup]="searchForm" (ngSubmit)="submitSearch()" role="search">
-    <div class="filter">
-      <label for="f-type">Type</label>
-      <select id="f-type" (change)="setFilter('type', $any($event.target).value)">
-        <option value="" [selected]="!filters().veille_type">Tous les types</option>
-        @for (t of types; track t.value) {
-          <option [value]="t.value" [selected]="t.value === filters().veille_type">
-            {{ t.label }}
-          </option>
-        }
-      </select>
-    </div>
-
-    <div class="filter">
-      <label for="f-theme">Thème</label>
-      <select id="f-theme" (change)="setFilter('theme', $any($event.target).value)">
-        <option value="" [selected]="!filters().theme_id">Tous les thèmes</option>
-        @for (t of themes(); track t.id) {
-          <option [value]="t.id" [selected]="t.id === filters().theme_id">{{ t.name }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="filter">
-      <label for="f-group">Groupe</label>
-      <select id="f-group" (change)="setFilter('group', $any($event.target).value)">
-        <option value="" [selected]="!filters().group_id">Tous les groupes</option>
-        @for (g of groups(); track g.id) {
-          <option [value]="g.id" [selected]="g.id === filters().group_id">{{ g.name }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="filter search">
-      <label for="f-q">Titre contenant</label>
-      <div class="search-row">
-        <input
-          id="f-q"
-          type="search"
-          formControlName="q"
-          maxlength="100"
-          enterkeyhint="search"
-          [attr.aria-invalid]="searchTooShort()"
-          [attr.aria-describedby]="searchTooShort() ? 'f-q-error' : null"
-        />
-        <button class="btn" type="submit">Rechercher</button>
-      </div>
-      @if (searchTooShort()) {
-        <span id="f-q-error" class="field-error">{{ minQuery }} caractères minimum.</span>
-      }
-    </div>
-  </form>
-
-  @if (hasFilters()) {
-    <p class="clear">
-      <button type="button" class="btn-link" (click)="clearFilters()">Retirer les filtres</button>
-    </p>
-  }
-</header>
-
-@if (feed.error(); as error) {
-  <p class="alert" role="alert">{{ error }}</p>
-}
-
-@if (feed.loading() && feed.items().length === 0) {
-  <div class="loading" aria-hidden="true">
-    @for (i of [1, 2, 3]; track i) {
-      <div class="item">
-        <span class="skeleton title-line"></span>
-        <span class="skeleton"></span>
-        <span class="skeleton meta-line"></span>
-      </div>
+<nav class="desks" aria-label="Types de veille">
+  <div class="page desks-inner">
+    <a
+      routerLink="/"
+      [queryParams]="{}"
+      [class.active]="!filters().veille_type"
+      [attr.aria-current]="!filters().veille_type ? 'page' : null"
+      >Tout</a
+    >
+    @for (d of desks(); track d.value) {
+      <a
+        routerLink="/"
+        [queryParams]="{ type: d.value }"
+        [class.active]="filters().veille_type === d.value"
+        [class.empty]="d.groups === 0"
+        [attr.aria-current]="filters().veille_type === d.value ? 'page' : null"
+        >{{ d.label }}<span class="count num" [attr.aria-label]="d.groups + ' groupes'">{{
+          d.groups
+        }}</span></a
+      >
     }
   </div>
-}
+</nav>
 
-@for (section of sections(); track section.key) {
-  <section class="day" [attr.aria-labelledby]="'day-' + section.key">
-    <h2 class="day-label" [id]="'day-' + section.key">{{ section.label }}</h2>
-    @for (a of section.articles; track a.id) {
-      <article class="item">
-        <h3 class="title">
-          <a [href]="a.link" target="_blank" rel="noopener noreferrer"
-            >{{ a.title }}<span class="visually-hidden"> (nouvel onglet)</span></a
-          >
-        </h3>
-        @if (a.snippet) {
-          <p class="snippet">{{ a.snippet }}</p>
+<div class="page">
+  <header class="feed-head">
+    <div class="title-row">
+      <h1>{{ heading() }}</h1>
+      <button
+        type="button"
+        class="btn refine-toggle"
+        aria-controls="affiner"
+        [attr.aria-expanded]="refineOpen()"
+        (click)="refineOpen.set(!refineOpen())"
+      >
+        Affiner
+        @if (refineCount() > 0) {
+          <span class="num">({{ refineCount() }})</span>
         }
-        <p class="meta">
-          <time [attr.datetime]="a.published_at">{{ time(a.published_at) }}</time>
-          <span class="visually-hidden">, </span>
-          <a class="theme" [routerLink]="[]" [queryParams]="{ theme: a.theme.id }">
-            <span class="swatch" [style.background]="a.theme.color" aria-hidden="true"></span>
-            {{ a.theme.name }}
-          </a>
-          <span class="visually-hidden">, </span>
-          <span class="type">{{ typeLabel(a.group.veille_type) }}</span>
-          <span class="visually-hidden">, groupe </span>
-          <a [routerLink]="[]" [queryParams]="{ group: a.group.id }">{{ a.group.name }}</a>
-          <span class="visually-hidden">, source </span>
-          <a [routerLink]="[]" [queryParams]="{ source: a.source.id }">{{ a.source.name }}</a>
-        </p>
-      </article>
-    }
-  </section>
-}
+      </button>
+    </div>
 
-@if (showEmpty()) {
-  <div class="empty" role="status">
-    @switch (emptyReason()) {
-      @case ('filtered') {
-        <h2>Aucun article pour ces filtres</h2>
-        <p class="muted">
-          Élargissez la recherche ou
-          <button type="button" class="btn-link" (click)="clearFilters()">
-            retirez les filtres</button
-          >.
-        </p>
+    @if (activeFilters().length > 1 || refineCount() > 0) {
+      <p class="active-filters small">
+        <span class="visually-hidden">Filtres actifs :</span>
+        @for (part of activeFilters(); track part; let last = $last) {
+          <span>{{ part }}</span>
+          @if (!last) {
+            <span class="sep" aria-hidden="true">/</span>
+          }
+        }
+        <button type="button" class="btn-link" (click)="clearFilters()">Tout retirer</button>
+      </p>
+    }
+
+    <form
+      id="affiner"
+      class="refine"
+      [class.open]="refineOpen()"
+      [formGroup]="searchForm"
+      (ngSubmit)="submitSearch()"
+      role="search"
+    >
+      <div class="field search">
+        <label for="f-q">Titre contenant</label>
+        <div class="search-row">
+          <input
+            id="f-q"
+            type="search"
+            formControlName="q"
+            maxlength="100"
+            enterkeyhint="search"
+            [attr.aria-invalid]="searchTooShort()"
+            [attr.aria-describedby]="searchTooShort() ? 'f-q-error' : null"
+          />
+          <button class="btn" type="submit">Rechercher</button>
+        </div>
+        @if (searchTooShort()) {
+          <span id="f-q-error" class="field-error">{{ minQuery }} caractères minimum.</span>
+        }
+      </div>
+      <div class="field">
+        <label for="f-theme">Thème</label>
+        <select id="f-theme" (change)="setFilter('theme', $any($event.target).value)">
+          <option value="" [selected]="!filters().theme_id">Tous les thèmes</option>
+          @for (t of themes(); track t.id) {
+            <option [value]="t.id" [selected]="t.id === filters().theme_id">{{ t.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-group">Groupe</label>
+        <select id="f-group" (change)="setFilter('group', $any($event.target).value)">
+          <option value="" [selected]="!filters().group_id">Tous les groupes</option>
+          @for (g of groups(); track g.id) {
+            <option [value]="g.id" [selected]="g.id === filters().group_id">{{ g.name }}</option>
+          }
+        </select>
+      </div>
+    </form>
+  </header>
+
+  @if (feed.error(); as error) {
+    <p class="alert" role="alert">{{ error }}</p>
+  }
+
+  @if (feed.loading() && feed.items().length === 0) {
+    <div class="loading" aria-hidden="true">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="dispatch">
+          <span class="skeleton time-line"></span>
+          <div class="body">
+            <span class="skeleton slug-line"></span>
+            <span class="skeleton title-line"></span>
+            <span class="skeleton"></span>
+          </div>
+        </div>
       }
-      @case ('awaiting-fetch') {
-        <h2>Premier relevé en attente</h2>
-        <p class="muted">
-          Les sources sont en place. n8n les relève toutes les deux heures : les premiers
-          articles apparaîtront ici au prochain passage.
-        </p>
-        <p><a routerLink="/groupes">Voir l'état des sources</a></p>
+    </div>
+  }
+
+  @for (section of sections(); track section.key) {
+    <section class="day" [attr.aria-labelledby]="'day-' + section.key">
+      <h2 class="day-label slug" [id]="'day-' + section.key">
+        {{ section.label }}
+        @if (section.detail) {
+          <span class="muted">{{ section.detail }}</span>
+        }
+      </h2>
+      @for (a of section.articles; track a.id) {
+        <article class="dispatch" [class.fresh]="isNew(a)">
+          <time class="time num" [attr.datetime]="a.published_at">{{ time(a.published_at) }}</time>
+          <div class="body">
+            <p class="slug-line slug">
+              <a class="desk" [routerLink]="[]" [queryParams]="{ type: a.group.veille_type }">{{
+                typeLabel(a.group.veille_type)
+              }}</a>
+              <span class="sep" aria-hidden="true">/</span>
+              <a class="theme" [routerLink]="[]" [queryParams]="{ theme: a.theme.id }"
+                ><span class="swatch" [style.background]="a.theme.color" aria-hidden="true"></span
+                >{{ a.theme.name }}</a
+              >
+              @if (isNew(a)) {
+                <span class="new">Nouveau</span>
+              }
+            </p>
+            <h3 class="title">
+              <a [href]="a.link" target="_blank" rel="noopener noreferrer"
+                >{{ a.title }}<span class="visually-hidden"> (nouvel onglet)</span></a
+              >
+            </h3>
+            @if (a.snippet) {
+              <p class="snippet">{{ a.snippet }}</p>
+            }
+            <p class="origin small">
+              <a [routerLink]="[]" [queryParams]="{ source: a.source.id }">{{ a.source.name }}</a>
+              <span class="sep" aria-hidden="true">·</span>
+              <span class="visually-hidden">groupe </span>
+              <a [routerLink]="[]" [queryParams]="{ group: a.group.id }">{{ a.group.name }}</a>
+            </p>
+          </div>
+        </article>
       }
-      @default {
-        @if (auth.isEditor()) {
-          <h2>Mettre en place la veille</h2>
-          <p class="muted">Trois étapes, ensuite n8n relève les flux toutes les deux heures.</p>
-          <ol class="steps">
-            <li [class.done]="emptyReason() !== 'no-theme'">
-              <div class="step-body">
-                <p>
-                  <strong>Créer un thème</strong> : le sujet suivi, par exemple « Cloud » ou
-                  « Concurrents ».
-                </p>
-                @if (emptyReason() === 'no-theme') {
-                  <a class="btn btn-primary" routerLink="/themes">Créer un thème</a>
-                } @else {
-                  <span class="state">Fait</span>
-                }
-              </div>
-            </li>
-            <li
-              [class.done]="emptyReason() === 'no-source'"
-              [class.pending]="emptyReason() === 'no-theme'"
-            >
-              <div class="step-body">
-                <p><strong>Créer un groupe</strong> : un type de veille et un thème.</p>
-                @if (emptyReason() === 'no-group') {
-                  <a class="btn btn-primary" routerLink="/groupes">Créer un groupe</a>
-                } @else if (emptyReason() === 'no-source') {
-                  <span class="state">Fait</span>
-                }
-              </div>
-            </li>
-            <li [class.pending]="emptyReason() !== 'no-source'">
-              <div class="step-body">
-                <p><strong>Ajouter une source</strong> : l'adresse d'un flux RSS ou Atom.</p>
-                @if (emptyReason() === 'no-source' && firstEmptyGroup(); as g) {
-                  <a class="btn btn-primary" [routerLink]="['/groupes', g.id]"
-                    >Ajouter une source</a
-                  >
-                }
-              </div>
-            </li>
-          </ol>
-        } @else {
-          <h2>La veille n'est pas encore configurée</h2>
+    </section>
+  }
+
+  @if (showEmpty()) {
+    <section class="empty" role="status" aria-labelledby="empty-title">
+      @switch (emptyReason()) {
+        @case ('filtered') {
+          <h2 id="empty-title">Aucune dépêche pour ces filtres</h2>
           <p class="muted">
-            Aucune source n'est suivie pour l'instant. Les éditeurs de l'équipe ajoutent les flux ;
-            les articles apparaîtront ici dès le premier relevé.
+            Élargissez la recherche ou
+            <button type="button" class="btn-link" (click)="clearFilters()">
+              retirez les filtres</button
+            >.
           </p>
         }
+        @case ('awaiting-fetch') {
+          <h2 id="empty-title">Premier relevé en attente</h2>
+          <p class="muted">
+            Les sources sont en place. n8n les relève toutes les deux heures : les premières
+            dépêches arriveront ici au prochain passage.
+          </p>
+          <p><a routerLink="/groupes">Voir l'état des sources</a></p>
+        }
+        @default {
+          @if (auth.isEditor()) {
+            <h2 id="empty-title">Mettre en place la veille</h2>
+            <p class="muted">Trois étapes, ensuite n8n relève les flux toutes les deux heures.</p>
+            <ol class="steps">
+              <li [class.done]="emptyReason() !== 'no-theme'">
+                <span class="step num" aria-hidden="true">1</span>
+                <div class="body">
+                  <p>
+                    <strong>Créer un thème</strong> : le sujet suivi, par exemple «&nbsp;Cloud&nbsp;»
+                    ou «&nbsp;Concurrents&nbsp;».
+                  </p>
+                  @if (emptyReason() === 'no-theme') {
+                    <a class="btn btn-primary" routerLink="/themes">Créer un thème</a>
+                  } @else {
+                    <span class="state slug">Fait</span>
+                  }
+                </div>
+              </li>
+              <li
+                [class.done]="emptyReason() === 'no-source'"
+                [class.pending]="emptyReason() === 'no-theme'"
+              >
+                <span class="step num" aria-hidden="true">2</span>
+                <div class="body">
+                  <p><strong>Créer un groupe</strong> : un type de veille et un thème.</p>
+                  @if (emptyReason() === 'no-group') {
+                    <a class="btn btn-primary" routerLink="/groupes">Créer un groupe</a>
+                  } @else if (emptyReason() === 'no-source') {
+                    <span class="state slug">Fait</span>
+                  }
+                </div>
+              </li>
+              <li [class.pending]="emptyReason() !== 'no-source'">
+                <span class="step num" aria-hidden="true">3</span>
+                <div class="body">
+                  <p><strong>Ajouter une source</strong> : l'adresse d'un flux RSS ou Atom.</p>
+                  @if (emptyReason() === 'no-source' && firstEmptyGroup(); as g) {
+                    <a class="btn btn-primary" [routerLink]="['/groupes', g.id]"
+                      >Ajouter une source</a
+                    >
+                  }
+                </div>
+              </li>
+            </ol>
+          } @else {
+            <h2 id="empty-title">La veille n'est pas encore configurée</h2>
+            <p class="muted">
+              Aucune source n'est suivie pour l'instant. Les éditeurs de l'équipe ajoutent les
+              flux ; les dépêches arriveront ici dès le premier relevé.
+            </p>
+          }
+        }
       }
+    </section>
+  }
+
+  <div class="more" aria-live="polite">
+    @if (feed.loading() && feed.items().length > 0) {
+      <p class="muted">Chargement des dépêches plus anciennes…</p>
+    } @else if (feed.hasMore()) {
+      <button type="button" class="btn" (click)="feed.loadMore()">
+        Dépêches plus anciennes
+      </button>
     }
   </div>
-}
-
-<div class="more" aria-live="polite">
-  @if (feed.loading() && feed.items().length > 0) {
-    <p class="muted">Chargement des articles plus anciens…</p>
-  } @else if (feed.hasMore()) {
-    <button type="button" class="btn" (click)="feed.loadMore()">
-      Charger les articles plus anciens
-    </button>
-  }
 </div>
