@@ -6,7 +6,7 @@ marché, autre) et un **thème** libre. n8n relève les flux toutes les 2 h et r
 articles au site.
 
 ```
-Navigateur ──HTTPS──▶ Vercel (Angular statique + rewrite /api/*) ──HTTPS──▶ Cloud Run (FastAPI)
+Navigateur ──HTTPS──▶ Vercel (Angular statique + rewrite /api/*) ──HTTPS──▶ Render (FastAPI)
                                                                               │ TLS
 n8n (VPS) ──HTTPS + Bearer──────────────────────────────────▶ /api/internal/* ▼
                                                                     Supabase Postgres
@@ -32,7 +32,7 @@ Aucune requête n'est crue sur sa provenance réseau : chacune porte sa propre p
 
 ### 1. Supabase
 
-1. Créer le projet dans la même région que Cloud Run (Paris : `eu-west-3`).
+1. Créer le projet dans une région proche de Render (Paris : `eu-west-3`).
 2. SQL Editor — rôle applicatif dédié plutôt que `postgres` :
 
    ```sql
@@ -40,41 +40,36 @@ Aucune requête n'est crue sur sa provenance réseau : chacune porte sa propre p
    GRANT USAGE, CREATE ON SCHEMA public TO veille_app;
    ```
 3. Connect → **Session pooler** → construire `VEILLE_DATABASE_URL` comme dans `.env.example`
-   (utilisateur `veille_app.<project-ref>`, `?ssl=require`).
+   (utilisateur `veille_app.<project-ref>`, `?ssl=require`). Vérifier le préfixe de l'hôte
+   (`aws-0-…` ou `aws-1-…`) dans l'écran Connect : un mauvais cluster répond
+   « Tenant or user not found ».
 
-### 2. Backend sur Cloud Run
+### 2. Backend sur Render (offre gratuite)
 
-```bash
-cd backend
-gcloud run deploy veille-api --source . --region europe-west9 \
-  --allow-unauthenticated --max-instances 2 --memory 512Mi \
-  --set-secrets VEILLE_DATABASE_URL=veille-db-url:latest,VEILLE_TOTP_ENCRYPTION_KEY=veille-totp-key:latest,VEILLE_INTERNAL_TOKEN_SHA256=veille-n8n-token-sha256:latest
+Service Docker décrit par `render.yaml` (Blueprint) : `rootDir: backend`, région Francfort,
+secrets en `sync: false` (saisis dans le dashboard, jamais dans git) :
+`VEILLE_DATABASE_URL`, `VEILLE_TOTP_ENCRYPTION_KEY`, `VEILLE_INTERNAL_TOKEN_SHA256`.
 
-# Migrations (hors démarrage, pour éviter les courses entre instances) :
-gcloud run jobs deploy veille-migrate --source . --region europe-west9 \
-  --command alembic --args upgrade,head \
-  --set-secrets VEILLE_DATABASE_URL=veille-db-url:latest,VEILLE_TOTP_ENCRYPTION_KEY=veille-totp-key:latest,VEILLE_INTERNAL_TOKEN_SHA256=veille-n8n-token-sha256:latest
-gcloud run jobs execute veille-migrate --region europe-west9 --wait
-
-# Premier admin (en local, avec VEILLE_DATABASE_URL pointant sur Supabase) :
-pip install . && veille-admin create-admin --email vous@exemple.fr
-```
-
-`--allow-unauthenticated` est voulu : l'authentification est applicative (session + TOTP,
-ou Bearer pour n8n). `--max-instances` borne la facture en cas d'abus.
+- **Migrations** : `alembic upgrade head` tourne dans le `CMD`, avant uvicorn. Acceptable
+  tant qu'il n'y a qu'une instance (offre gratuite) ; le pre-deploy de Render est payant.
+- **Endormissement** : le service s'arrête après 15 min sans trafic entrant. Le keep-alive
+  est un workflow n8n (`GET /api/health` toutes les 10 min) : ~744 h/mois sur les 750 h
+  gratuites du workspace, donc un seul service gratuit possible.
+- **Premier admin** : `veille-admin create-admin --email …` depuis un poste qui atteint
+  Supabase, avec `VEILLE_DATABASE_URL` pointée dessus.
 
 ### 3. Frontend sur Vercel
 
-1. Remplacer l'URL Cloud Run dans `frontend/vercel.json` (règle `/api/:path*`).
-2. Importer le dépôt dans Vercel avec **Root Directory = `frontend`** ; le reste est lu
-   depuis `vercel.json` (Node 24 via `engines`).
+1. L'URL Render est dans `frontend/vercel.json` (règle `/api/:path*`).
+2. Projet Vercel avec **Root Directory = `frontend`** ; le reste est lu depuis `vercel.json`
+   (Node 24 via `engines`).
 
 Le rewrite rend l'API **same-origin** : pas de CORS à ouvrir, cookies `SameSite=Strict`.
 
 ### 4. n8n
 
-Workflow « Veille RSS → site (zero trust) » (non publié) :
-1. Nœud **Config** : `api_base` = URL Cloud Run (`https://veille-api-….run.app`).
+Workflow « Veille RSS → site (zero trust) » :
+1. Nœud **Config** : `api_base` = URL Render directe (`https://veille-api-6wcq.onrender.com`) : un saut de moins, et pas de protection de déploiement Vercel sur le chemin.
 2. Credential **Bearer** « Veille site - jeton n8n » = le jeton en clair.
 3. Publier, puis dépublier l'ancien « Veille RSS (sources pilotées par Data Table) ».
 
