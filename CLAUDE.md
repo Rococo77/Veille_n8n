@@ -98,14 +98,13 @@ Ne pas passer à SQLite ni à `create_all`.
   production = `main`, https://veille-n8n.vercel.app. Le rewrite `/api` → Render marche en
   production. Le connecteur MCP Vercel reste sans droits d'écriture sur l'équipe : passer par
   le dashboard.
-- **Render** : auto-deploy « On Commit » configuré mais jamais déclenché par un push (accès de
-  l'app GitHub Render au dépôt à vérifier). Déployer à la main via le connecteur en attendant.
+- **Render** : auto-deploy sur push `main` vérifié (2026-09-26). Tout push redéploie, y compris
+  un commit de doc seule (pas de build filter).
 
 ## À faire (dans l'ordre)
 
-1. **Render** : vérifier l'app GitHub Render sur le dépôt (auto-deploy).
-2. **Recette fonctionnelle** : création thème/groupe/source → premier relevé n8n → fil filtré.
-3. **Durcissements** : sémaphore argon2 (64 Mio par vérification sur 512 Mo), verrouillage
+1. **Recette fonctionnelle** : création thème/groupe/source → premier relevé n8n → fil filtré.
+2. **Durcissements** : sémaphore argon2 (64 Mio par vérification sur 512 Mo), verrouillage
    plafonné à ~15 min, purge `articles`/`audit_events` via un endpoint interne appelé par n8n,
    alerte n8n sur échec de push, pare-feu de sortie du conteneur n8n (rebinding DNS et
    redirections contournent `url_policy.py`).
