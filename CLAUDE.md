@@ -84,38 +84,32 @@ Ne pas passer à SQLite ni à `create_all`.
     `anon` sans droits. Tables propriété de `veille_app` : le rôle `postgres` (SQL Editor, MCP)
     n'y a pas accès sans `GRANT veille_app TO postgres` + `SET ROLE veille_app`.
   - Render : service `veille-api` (`srv-dar8t4bncjis73cj3400`), Francfort, gratuit,
-    https://veille-api-6wcq.onrender.com, branche `claude/fervent-sagan-1c0w1h` (à basculer sur
-    `main`, désormais à jour).
-  - Premier admin créé (2FA à enrôler à la première connexion).
+    https://veille-api-6wcq.onrender.com, branche `main`.
+  - Admin `corentin.rossetto@gmail.com` : connexion + 2FA validées dans le navigateur.
   - Recette API de bout en bout sur Render : 29/29 (login, 2FA + rotation, CSRF, rôles, SSRF,
     jeton n8n, ingestion hostile, idempotence, fil filtré, cascade, logout).
 - **n8n** :
-  - Workflow `FzbwhZhjtlNsdbvm` « Veille RSS → site (zero trust) » : `api_base` = URL Render.
-    **Non publié** : il manque la credential Bearer « Veille site - jeton n8n ».
+  - Workflow `FzbwhZhjtlNsdbvm` « Veille RSS → site (zero trust) » : **publié**, credential
+    Bearer « Veille site - jeton n8n » (`bslqPTb69Lvn7pBP`) sur les 3 nœuds HTTP. `api_base` =
+    URL Render directe.
   - Workflow `QvnqMXLP50qZDhen` « Veille keep-alive Render » : publié (10 min).
-  - Ancien workflow `out5DZTK69nHIX9x` (Data Tables) : encore publié. À dépublier une fois
-    le nouveau en service.
+  - Ancien workflow `out5DZTK69nHIX9x` (Data Tables) : dépublié.
 - **Vercel** : projet `veille-n8n` (équipe `rossettos-projects`), Root Directory `frontend`,
-  production = `main`. Vérifié sur la preview : `/api/health` via le rewrite → Render OK,
-  page de connexion rendue sans erreur console, CSP servie. Le connecteur MCP Vercel reste
-  sans droits d'écriture sur l'équipe : passer par le dashboard.
+  production = `main`, https://veille-n8n.vercel.app. Le rewrite `/api` → Render marche en
+  production. Le connecteur MCP Vercel reste sans droits d'écriture sur l'équipe : passer par
+  le dashboard.
 - **Render** : auto-deploy « On Commit » configuré mais jamais déclenché par un push (accès de
   l'app GitHub Render au dépôt à vérifier). Déployer à la main via le connecteur en attendant.
 
 ## À faire (dans l'ordre)
 
-1. **Render** : basculer la branche sur `main`, vérifier l'app GitHub Render sur le dépôt.
-2. **n8n** : credential Bearer, publier `FzbwhZhjtlNsdbvm`, dépublier `out5DZTK69nHIX9x`.
-3. **Recette dans le navigateur** :
-   - Parcours complet : connexion → enrôlement 2FA → création thème/groupe/source → premier
-     relevé n8n → fil filtré.
-   - Vérifier dans la console qu'aucune violation CSP n'apparaît.
-4. **Durcissements** : sémaphore argon2 (64 Mio par vérification sur 512 Mo), verrouillage
+1. **Render** : vérifier l'app GitHub Render sur le dépôt (auto-deploy).
+2. **Recette fonctionnelle** : création thème/groupe/source → premier relevé n8n → fil filtré.
+3. **Durcissements** : sémaphore argon2 (64 Mio par vérification sur 512 Mo), verrouillage
    plafonné à ~15 min, purge `articles`/`audit_events` via un endpoint interne appelé par n8n,
-   pare-feu de sortie du conteneur n8n (rebinding DNS et redirections contournent `url_policy.py`).
+   alerte n8n sur échec de push, pare-feu de sortie du conteneur n8n (rebinding DNS et
+   redirections contournent `url_policy.py`).
 
 ## Points non vérifiés ([PROBABLE])
 
-- Vercel transmet-il `Set-Cookie` et un en-tête `Host` accepté par Render sur un rewrite externe ?
-  À tester : le cookie `__Host-veille_session` doit apparaître après la connexion.
 - Limites actuelles de l'offre gratuite Render (750 h/mois, endormissement après 15 min).
