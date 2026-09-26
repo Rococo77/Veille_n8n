@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 
 import { AuditEvent, User } from '../../core/models';
@@ -38,11 +38,20 @@ const ACTIONS: Record<string, string> = {
   template: `
     <header class="head">
       <h1>Journal d'audit</h1>
-      <p class="muted">Les 200 derniers événements de sécurité et de modification.</p>
+      <p class="muted">
+        Les {{ limit() }} derniers événements de sécurité et de modification, du plus récent au
+        plus ancien.
+      </p>
     </header>
     @if (loadError(); as message) {
       <p class="alert" role="alert">{{ message }}</p>
     }
+    <div class="toolbar">
+      <label class="check">
+        <input type="checkbox" #onlyAlerts (change)="alertsOnly.set(onlyAlerts.checked)" />
+        Seulement les alertes ({{ alertCount() }})
+      </label>
+    </div>
     <div class="table-wrap">
       <table class="table">
         <thead>
@@ -54,19 +63,41 @@ const ACTIONS: Record<string, string> = {
             <th scope="col">IP</th>
           </tr>
         </thead>
-        <tbody>
-          @for (e of events(); track e.id) {
+        <tbody [attr.aria-busy]="loading()">
+          @if (loading()) {
+            @for (i of [1, 2, 3]; track i) {
+              <tr aria-hidden="true">
+                <td colspan="5"><span class="skeleton"></span></td>
+              </tr>
+            }
+          }
+          @for (e of visible(); track e.id) {
             <tr [class.alerting]="isAlert(e.action)">
-              <td>{{ date(e.at) }}</td>
+              <td class="when">{{ date(e.at) }}</td>
               <td>{{ label(e.action) }}</td>
               <td>{{ actor(e) }}</td>
               <td class="target">{{ e.target ?? '' }}</td>
               <td>{{ e.ip ?? '' }}</td>
             </tr>
+          } @empty {
+            @if (!loading() && !loadError()) {
+              <tr>
+                <td colspan="5" class="muted">
+                  {{ alertsOnly() ? 'Aucune alerte parmi ces événements.' : 'Aucun événement enregistré.' }}
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>
     </div>
+    @if (limit() < maxLimit && events().length >= limit()) {
+      <p class="more">
+        <button class="btn" type="button" (click)="limit.set(maxLimit)">
+          Afficher jusqu'à {{ maxLimit }} événements
+        </button>
+      </p>
+    }
   `,
   styles: `
     :host {
@@ -79,9 +110,18 @@ const ACTIONS: Record<string, string> = {
     .head p {
       margin: var(--space-1) 0 0;
     }
+    .toolbar {
+      margin-bottom: var(--space-2);
+    }
+    .when {
+      white-space: nowrap;
+    }
     .target {
       word-break: break-all;
       max-width: 18rem;
+    }
+    .more {
+      margin-top: var(--space-4);
     }
     tr.alerting td:nth-child(2) {
       color: var(--alert);
@@ -90,11 +130,25 @@ const ACTIONS: Record<string, string> = {
   `,
 })
 export class AuditPage {
+  /** Plafond imposé par l'API (Query le=500). */
+  protected readonly maxLimit = 500;
+  protected readonly limit = signal(200);
+  protected readonly alertsOnly = signal(false);
+
   private readonly eventsRes = httpResource<AuditEvent[]>(() => ({
     url: '/api/audit',
-    params: { limit: 200 },
+    params: { limit: this.limit() },
   }));
   protected readonly events = computed(() => valueOr(this.eventsRes, undefined) ?? []);
+  protected readonly loading = computed(
+    () => this.eventsRes.isLoading() && this.events().length === 0,
+  );
+  protected readonly alertCount = computed(
+    () => this.events().filter((e) => this.isAlert(e.action)).length,
+  );
+  protected readonly visible = computed(() =>
+    this.alertsOnly() ? this.events().filter((e) => this.isAlert(e.action)) : this.events(),
+  );
   protected readonly loadError = computed(() => errorOf(this.eventsRes));
   private readonly usersRes = httpResource<User[]>(() => '/api/users');
   private readonly emails = computed(

@@ -10,15 +10,8 @@
   margin: var(--space-1) 0 0;
 }
 
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  padding: var(--space-5);
+.create {
   margin-top: var(--space-5);
-}
-.panel h2 {
-  margin-bottom: var(--space-4);
 }
 
 .grid {
@@ -27,19 +20,38 @@
   gap: var(--space-3);
 }
 
-.actions {
-  white-space: nowrap;
-}
-.actions .btn-link + .btn-link {
-  margin-left: var(--space-3);
-}
-
-select {
+.users select {
   width: auto;
+}
+.users .email {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 40rem) {
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Un compte par fiche plutôt qu'un tableau à faire défiler. */
+  .users thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .users,
+  .users tbody,
+  .users tr,
+  .users td {
+    display: block;
+  }
+  .users tr {
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .users td {
+    border: 0;
+    padding: var(--space-1) 0;
   }
 }

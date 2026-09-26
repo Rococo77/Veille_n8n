@@ -49,9 +49,10 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
           type="password"
           formControlName="next"
           autocomplete="new-password"
+          aria-describedby="a-next-hint"
           [attr.aria-invalid]="form.controls.next.touched && form.controls.next.invalid"
         />
-        <span class="hint"
+        <span id="a-next-hint" class="hint"
           >12 caractères minimum. Une phrase de passe est plus simple à retenir.</span
         >
       </div>
@@ -63,12 +64,18 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
           formControlName="confirm"
           autocomplete="new-password"
           [attr.aria-invalid]="form.touched && form.hasError('mismatch')"
+          [attr.aria-describedby]="form.touched && form.hasError('mismatch') ? 'a-confirm-error' : null"
         />
         @if (form.touched && form.hasError('mismatch')) {
-          <span class="hint status-error">Les deux mots de passe diffèrent.</span>
+          <span id="a-confirm-error" class="field-error">Les deux mots de passe diffèrent.</span>
         }
       </div>
-      <button class="btn btn-primary" type="submit" [disabled]="busy()">
+      <button
+        class="btn btn-primary"
+        type="submit"
+        [disabled]="busy()"
+        [attr.aria-busy]="busy()"
+      >
         Changer le mot de passe
       </button>
     </form>
@@ -79,14 +86,7 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
       max-width: 30rem;
     }
     .panel {
-      background: var(--surface);
-      border: 1px solid var(--rule);
-      border-radius: var(--radius);
-      padding: var(--space-5);
       margin-top: var(--space-5);
-    }
-    .panel h2 {
-      margin-bottom: var(--space-4);
     }
   `,
 })

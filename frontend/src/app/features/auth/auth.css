@@ -47,8 +47,8 @@ canvas {
 }
 
 .secret {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  word-break: break-all;
+  font-family: var(--font-code);
+  word-spacing: 0.15em;
   font-size: var(--step--1);
   user-select: all;
 }

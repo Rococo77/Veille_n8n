@@ -5,12 +5,12 @@ import { Router, RouterLink } from '@angular/router';
 
 import { CatalogApi } from '../../core/api';
 import { AuthStore } from '../../core/auth.store';
+import { ConfirmService } from '../../core/confirm';
+import { fullDate, timeAgo } from '../../core/format';
 import { GroupDetail, GroupInput, Source, Theme, veilleTypeLabel } from '../../core/models';
 import { problemMessage } from '../../core/problem';
 import { errorOf, valueOr } from '../../core/resource';
 import { GroupForm } from './group-form';
-
-const dateTime = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
 
 @Component({
   selector: 'app-group-detail-page',
@@ -25,6 +25,7 @@ export class GroupDetailPage {
 
   private readonly catalog = inject(CatalogApi);
   private readonly router = inject(Router);
+  private readonly confirm = inject(ConfirmService);
   protected readonly auth = inject(AuthStore);
 
   private readonly groupRes = httpResource<GroupDetail>(() => {
@@ -71,10 +72,8 @@ export class GroupDetailPage {
   });
 
   protected typeLabel = veilleTypeLabel;
-
-  protected date(iso: string | null): string {
-    return iso ? dateTime.format(new Date(iso)) : 'jamais';
-  }
+  protected timeAgo = timeAgo;
+  protected fullDate = fullDate;
 
   private async run(action: () => Promise<unknown>): Promise<boolean> {
     this.busy.set(true);
@@ -101,9 +100,14 @@ export class GroupDetailPage {
   }
 
   async deleteGroup(group: GroupDetail): Promise<void> {
-    const ok = window.confirm(
-      `Supprimer « ${group.name} », ses ${group.source_count} sources et tous leurs articles ?`,
-    );
+    const sources = `${group.source_count} source${group.source_count > 1 ? 's' : ''}`;
+    const ok = await this.confirm.ask({
+      title: 'Supprimer le groupe ?',
+      body: `« ${group.name} », ses ${sources} et tous leurs articles seront supprimés définitivement. Pour seulement arrêter les relevés, mettez le groupe en pause.`,
+      confirmLabel: 'Supprimer définitivement',
+      danger: true,
+      typeToConfirm: group.name,
+    });
     if (ok && (await this.run(() => this.catalog.deleteGroup(group.id)))) {
       await this.router.navigateByUrl('/groupes');
     }
@@ -126,8 +130,12 @@ export class GroupDetailPage {
   }
 
   async deleteSource(source: Source): Promise<void> {
-    if (window.confirm(`Supprimer la source « ${source.name} » et ses articles ?`)) {
-      await this.run(() => this.catalog.deleteSource(source.id));
-    }
+    const ok = await this.confirm.ask({
+      title: 'Supprimer la source ?',
+      body: `« ${source.name} » et tous ses articles seront supprimés. Pour seulement arrêter les relevés, désactivez-la.`,
+      confirmLabel: 'Supprimer la source',
+      danger: true,
+    });
+    if (ok) await this.run(() => this.catalog.deleteSource(source.id));
   }
 }

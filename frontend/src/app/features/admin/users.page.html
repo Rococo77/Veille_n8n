@@ -11,7 +11,7 @@
 }
 
 <div class="table-wrap">
-  <table class="table">
+  <table class="table users">
     <thead>
       <tr>
         <th scope="col">Email</th>
@@ -21,11 +21,18 @@
         <th scope="col"><span class="visually-hidden">Actions</span></th>
       </tr>
     </thead>
-    <tbody>
+    <tbody [attr.aria-busy]="loading()">
+      @if (loading()) {
+        @for (i of [1, 2]; track i) {
+          <tr aria-hidden="true">
+            <td colspan="5"><span class="skeleton"></span></td>
+          </tr>
+        }
+      }
       @for (u of users(); track u.id) {
         @let self = u.id === auth.me()?.id;
         <tr>
-          <td>
+          <td class="email">
             {{ u.email }}
             @if (self) {
               <span class="muted">(vous)</span>
@@ -34,16 +41,23 @@
           <td>
             <label class="visually-hidden" [for]="'role-' + u.id">Rôle de {{ u.email }}</label>
             <select
+              #roleSelect
               [id]="'role-' + u.id"
               [disabled]="self || busy()"
-              (change)="setRole(u, $any($event.target).value)"
+              (change)="setRole(u, roleSelect)"
             >
               @for (r of roles; track r.value) {
                 <option [value]="r.value" [selected]="r.value === u.role">{{ r.label }}</option>
               }
             </select>
           </td>
-          <td>{{ u.totp_confirmed ? 'Configuré' : 'À configurer' }}</td>
+          <td>
+            @if (u.totp_confirmed) {
+              Configuré
+            } @else {
+              <span class="muted">À configurer</span>
+            }
+          </td>
           <td>
             @if (!u.is_active) {
               <span class="status-error">Désactivé</span>
@@ -53,36 +67,34 @@
               Actif
             }
           </td>
-          <td class="actions">
+          <td>
             @if (!self) {
-              <button
-                class="btn-link small"
-                type="button"
-                [disabled]="busy()"
-                (click)="toggleActive(u)"
-              >
-                {{ u.is_active ? 'Désactiver' : 'Réactiver' }}
-              </button>
-              @if (u.totp_confirmed) {
+              <div class="inline-actions small">
                 <button
-                  class="btn-link small"
+                  class="btn-link"
+                  [class.btn-danger]="u.is_active"
                   type="button"
                   [disabled]="busy()"
-                  (click)="resetMfa(u)"
+                  (click)="toggleActive(u)"
                 >
-                  Réinitialiser le 2FA
+                  {{ u.is_active ? 'Désactiver' : 'Réactiver' }}
                 </button>
-              }
-              @if (isLocked(u)) {
-                <button
-                  class="btn-link small"
-                  type="button"
-                  [disabled]="busy()"
-                  (click)="unlock(u)"
-                >
-                  Déverrouiller
-                </button>
-              }
+                @if (u.totp_confirmed) {
+                  <button
+                    class="btn-link"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="resetMfa(u)"
+                  >
+                    Réinitialiser le 2FA
+                  </button>
+                }
+                @if (isLocked(u)) {
+                  <button class="btn-link" type="button" [disabled]="busy()" (click)="unlock(u)">
+                    Déverrouiller
+                  </button>
+                }
+              </div>
             }
           </td>
         </tr>
@@ -91,7 +103,7 @@
   </table>
 </div>
 
-<form class="panel" [formGroup]="form" (ngSubmit)="create()" novalidate>
+<form class="panel create" [formGroup]="form" (ngSubmit)="create()" novalidate>
   <h2>Ajouter un compte</h2>
   <div class="grid">
     <div class="field">
@@ -111,9 +123,12 @@
         type="password"
         formControlName="password"
         autocomplete="new-password"
+        aria-describedby="u-password-hint"
         [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
       />
-      <span class="hint">12 caractères minimum. Transmettez-le hors de cet outil.</span>
+      <span id="u-password-hint" class="hint"
+        >12 caractères minimum. Transmettez-le hors de cet outil.</span
+      >
     </div>
     <div class="field">
       <label for="u-role">Rôle</label>
@@ -124,5 +139,7 @@
       </select>
     </div>
   </div>
-  <button class="btn btn-primary" type="submit" [disabled]="busy()">Créer le compte</button>
+  <button class="btn btn-primary" type="submit" [disabled]="busy()" [attr.aria-busy]="busy()">
+    Créer le compte
+  </button>
 </form>

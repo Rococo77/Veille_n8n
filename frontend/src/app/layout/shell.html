@@ -1,11 +1,36 @@
 <a class="skip" href="#contenu">Aller au contenu</a>
 
 <div class="frame">
-  <nav class="rail" aria-label="Navigation principale">
+  <header class="topbar">
     <a class="brand" routerLink="/">Veille</a>
+    <button
+      type="button"
+      class="menu-toggle"
+      aria-controls="navigation"
+      [attr.aria-expanded]="menuOpen()"
+      (click)="toggleMenu()"
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+        @if (menuOpen()) {
+          <path d="M6 6l12 12M18 6L6 18" />
+        } @else {
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        }
+      </svg>
+      Menu
+      @if (failing() > 0) {
+        <span class="badge" [attr.aria-label]="failing() + ' sources en erreur'">{{
+          failing()
+        }}</span>
+      }
+    </button>
+  </header>
+
+  <nav id="navigation" class="rail" [class.open]="menuOpen()" aria-label="Navigation principale">
+    <a class="brand rail-brand" routerLink="/">Veille</a>
 
     <section aria-labelledby="nav-types">
-      <h2 id="nav-types" class="rail-heading">Types de veille</h2>
+      <h2 id="nav-types" class="rail-heading">Par type de veille</h2>
       <ul>
         <li>
           <a
@@ -18,9 +43,14 @@
         </li>
         @for (t of types(); track t.value) {
           <li>
-            <a routerLink="/" [queryParams]="{ type: t.value }" routerLinkActive="active">
+            <a
+              routerLink="/"
+              [queryParams]="{ type: t.value }"
+              routerLinkActive="active"
+              [class.empty]="t.groups === 0"
+            >
               <span>{{ t.label }}</span>
-              <span class="count">{{ t.groups }}</span>
+              <span class="count" [attr.aria-label]="t.groups + ' groupes'">{{ t.groups }}</span>
             </a>
           </li>
         }
@@ -29,7 +59,7 @@
 
     @if (themeList().length) {
       <section aria-labelledby="nav-themes">
-        <h2 id="nav-themes" class="rail-heading">Thèmes</h2>
+        <h2 id="nav-themes" class="rail-heading">Par thème</h2>
         <ul>
           @for (theme of themeList(); track theme.id) {
             <li>
@@ -57,7 +87,7 @@
           </a>
         </li>
         @if (auth.isEditor()) {
-          <li><a routerLink="/themes" routerLinkActive="active">Thèmes</a></li>
+          <li><a routerLink="/themes" routerLinkActive="active">Thèmes et couleurs</a></li>
         }
         @if (auth.isAdmin()) {
           <li><a routerLink="/admin/utilisateurs" routerLinkActive="active">Utilisateurs</a></li>
@@ -72,7 +102,9 @@
     </footer>
   </nav>
 
-  <main id="contenu" class="main" tabindex="-1">
+  <main #main id="contenu" class="main" tabindex="-1">
     <router-outlet />
   </main>
 </div>
+
+<app-confirm-dialog />

@@ -1,18 +1,51 @@
 :host {
   display: block;
-  max-width: 46rem;
+  max-width: 54rem;
 }
 
 .head {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
   margin-bottom: var(--space-5);
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  margin: 0;
+  color: var(--muted);
+}
+.sep {
+  color: var(--field);
 }
 
 .filters {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.6fr);
+  gap: var(--space-2) var(--space-3);
+  align-items: start;
+}
+.filter {
+  display: grid;
+  gap: var(--space-1);
+}
+.filter label {
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
+}
+.search-row {
+  display: flex;
   gap: var(--space-2);
+}
+.search-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.clear {
+  margin: 0;
 }
 
 .day {
@@ -32,10 +65,11 @@
 }
 
 .item {
-  --theme: var(--rule);
-  padding: var(--space-3) 0 var(--space-3) var(--space-4);
-  border-left: 3px solid var(--theme);
-  margin: var(--space-3) 0;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.item:last-child {
+  border-bottom: 0;
 }
 
 .title {
@@ -58,6 +92,7 @@
 
 .snippet {
   margin: var(--space-1) 0 0;
+  max-width: 68ch;
   color: var(--muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -68,6 +103,7 @@
 .meta {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-1) var(--space-3);
   margin: var(--space-2) 0 0;
   font-size: var(--step--1);
@@ -78,18 +114,114 @@
 }
 .meta a {
   color: inherit;
+  text-decoration-color: var(--rule);
+}
+.meta a:hover {
+  color: var(--ink);
+  text-decoration-color: currentColor;
+}
+.meta .theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.loading .item {
+  display: grid;
+  gap: var(--space-2);
+}
+.loading .title-line {
+  inline-size: 70%;
+  block-size: 1.1em;
+}
+.loading .meta-line {
+  inline-size: 40%;
 }
 
 .empty {
-  padding: var(--space-6) 0;
+  padding: var(--space-5) 0;
+  max-width: 38rem;
+}
+.empty h2 {
+  margin-bottom: var(--space-2);
+}
+.empty p {
+  margin: 0 0 var(--space-3);
+}
+
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+.steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: 50%;
+  border: 1px solid var(--field);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.steps li.done::before {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: var(--surface);
+}
+.steps li.pending {
+  color: var(--muted);
+}
+.step-body {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding-top: 0.2rem;
+}
+.step-body p {
+  margin: 0;
+}
+.steps .state {
+  color: var(--ok);
+  font-weight: 600;
+  font-size: var(--step--1);
 }
 
 .more {
   padding: var(--space-4) 0 var(--space-6);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 52rem) {
+  .filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .filter.search {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 36rem) {
   .filters {
     grid-template-columns: 1fr 1fr;
+  }
+  .filter:first-child {
+    grid-column: 1 / -1;
   }
 }

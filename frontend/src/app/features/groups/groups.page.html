@@ -3,7 +3,7 @@
     <h1>Groupes et sources</h1>
     <p class="muted">Chaque groupe rassemble des flux RSS sous un type de veille et un thème.</p>
   </div>
-  @if (auth.isEditor() && !creating()) {
+  @if (auth.isEditor() && !creating() && themes().length > 0) {
     <button class="btn btn-primary" type="button" (click)="creating.set(true)">
       Nouveau groupe
     </button>
@@ -62,12 +62,26 @@
     </ul>
   </section>
 } @empty {
-  @if (!loading() && !loadError()) {
-    <p class="muted empty">
-      Aucun groupe pour l'instant.
-      @if (auth.isEditor()) {
-        Créez-en un pour commencer à suivre des sources.
+  @if (!loading() && !loadError() && !creating()) {
+    <div class="empty" role="status">
+      <h2>Aucun groupe pour l'instant</h2>
+      @if (!auth.isEditor()) {
+        <p class="muted">Les éditeurs de l'équipe créent les groupes et y ajoutent les flux.</p>
+      } @else if (themes().length === 0) {
+        <p class="muted">
+          Un groupe se classe sous un thème : commencez par en créer un, par exemple « Cloud »
+          ou « Concurrents ».
+        </p>
+        <a class="btn btn-primary" routerLink="/themes">Créer un thème</a>
+      } @else {
+        <p class="muted">
+          Un groupe réunit des flux RSS sous un type de veille et un thème. Créez-en un, puis
+          ajoutez-y vos sources.
+        </p>
+        <button class="btn btn-primary" type="button" (click)="creating.set(true)">
+          Créer le premier groupe
+        </button>
       }
-    </p>
+    </div>
   }
 }

@@ -1,4 +1,4 @@
-<p class="small"><a routerLink="/groupes">Groupes et sources</a></p>
+<p class="small back"><a routerLink="/groupes">Groupes et sources</a></p>
 
 @if (loadError(); as message) {
   <p class="alert" role="alert">{{ message }}</p>
@@ -11,12 +11,10 @@
         <span class="swatch" [style.background]="g.theme.color" aria-hidden="true"></span>
         {{ g.name }}
       </h1>
-      <p class="muted">
-        Veille {{ typeLabel(g.veille_type).toLowerCase() }}, thème {{ g.theme.name }}.
-        @if (!g.enabled) {
-          <strong>En pause : n8n ne relève pas ces sources.</strong>
-        }
-      </p>
+      <p class="muted">Veille {{ typeLabel(g.veille_type).toLowerCase() }}, thème {{ g.theme.name }}.</p>
+      @if (!g.enabled) {
+        <p class="notice">En pause : n8n ne relève pas ces sources.</p>
+      }
       @if (g.description) {
         <p>{{ g.description }}</p>
       }
@@ -44,9 +42,16 @@
         (cancelled)="editing.set(false)"
       />
       <hr />
+      <h3 class="danger-title">Zone sensible</h3>
       <div class="row">
-        <button class="btn" type="button" [disabled]="busy()" (click)="toggleGroup(g)">
-          {{ g.enabled ? 'Mettre en pause' : 'Réactiver' }}
+        <button
+          class="btn"
+          type="button"
+          [disabled]="busy()"
+          [attr.aria-busy]="busy()"
+          (click)="toggleGroup(g)"
+        >
+          {{ g.enabled ? 'Mettre en pause les relevés' : 'Reprendre les relevés' }}
         </button>
         <button class="btn btn-danger" type="button" [disabled]="busy()" (click)="deleteGroup(g)">
           Supprimer le groupe
@@ -57,8 +62,9 @@
 
   <section aria-labelledby="sources-title">
     <h2 id="sources-title" class="section-title">Sources</h2>
+    <p class="muted small">n8n relève chaque source active toutes les deux heures.</p>
     <div class="table-wrap">
-      <table class="table">
+      <table class="table sources">
         <thead>
           <tr>
             <th scope="col">Nom</th>
@@ -72,51 +78,74 @@
         </thead>
         <tbody>
           @for (s of g.sources; track s.id) {
-            <tr [class.muted]="!s.enabled">
-              <td>{{ s.name }}</td>
+            <tr [class.off]="!s.enabled">
+              <td class="name">
+                <a routerLink="/" [queryParams]="{ source: s.id }">{{ s.name }}</a>
+              </td>
               <td class="url">{{ s.url }}</td>
-              <td>{{ date(s.last_fetch_at) }}</td>
               <td>
-                @switch (s.last_status) {
-                  @case ('ok') {
-                    <span class="status-ok">OK</span>
-                  }
-                  @case ('error') {
-                    <span class="status-error">Erreur ({{ s.consecutive_failures }} de suite)</span>
-                    <br /><span class="small">{{ s.last_error }}</span>
-                  }
-                  @default {
-                    <span class="muted">En attente</span>
-                  }
+                @if (s.last_fetch_at; as at) {
+                  <time [attr.datetime]="at" [attr.title]="fullDate(at)">{{ timeAgo(at) }}</time>
+                } @else {
+                  <span class="muted">jamais</span>
                 }
+              </td>
+              <td>
                 @if (!s.enabled) {
-                  <br /><span class="small">désactivée</span>
+                  <span class="muted">Désactivée</span>
+                } @else {
+                  @switch (s.last_status) {
+                    @case ('ok') {
+                      <span class="status-ok">OK</span>
+                    }
+                    @case ('error') {
+                      <span class="status-error"
+                        >En erreur ({{ s.consecutive_failures }} relevé{{
+                          s.consecutive_failures > 1 ? 's' : ''
+                        }}
+                        de suite)</span
+                      >
+                      @if (s.last_error) {
+                        <span class="small error-detail">{{ s.last_error }}</span>
+                      }
+                    }
+                    @default {
+                      <span class="muted">En attente du premier relevé</span>
+                    }
+                  }
                 }
               </td>
               @if (auth.isEditor()) {
-                <td class="actions">
-                  <button
-                    class="btn-link small"
-                    type="button"
-                    [disabled]="busy()"
-                    (click)="toggleSource(s)"
-                  >
-                    {{ s.enabled ? 'Désactiver' : 'Activer' }}
-                  </button>
-                  <button
-                    class="btn-link small btn-danger"
-                    type="button"
-                    [disabled]="busy()"
-                    (click)="deleteSource(s)"
-                  >
-                    Supprimer
-                  </button>
+                <td>
+                  <div class="inline-actions small">
+                    <button
+                      class="btn-link"
+                      type="button"
+                      [disabled]="busy()"
+                      (click)="toggleSource(s)"
+                    >
+                      {{ s.enabled ? 'Désactiver' : 'Activer' }}
+                    </button>
+                    <button
+                      class="btn-link btn-danger"
+                      type="button"
+                      [disabled]="busy()"
+                      (click)="deleteSource(s)"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </td>
               }
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="muted">Aucune source dans ce groupe.</td>
+              <td colspan="5" class="muted">
+                Aucune source dans ce groupe.
+                @if (auth.isEditor()) {
+                  Ajoutez l'adresse d'un flux RSS ou Atom ci-dessous.
+                }
+              </td>
             </tr>
           }
         </tbody>
@@ -134,6 +163,7 @@
               type="text"
               formControlName="name"
               maxlength="120"
+              placeholder="Le Monde Informatique"
               [attr.aria-invalid]="
                 sourceForm.controls.name.touched && sourceForm.controls.name.invalid
               "
@@ -146,15 +176,31 @@
               type="url"
               formControlName="url"
               placeholder="https://exemple.fr/feed"
+              aria-describedby="s-url-hint"
               [attr.aria-invalid]="
                 sourceForm.controls.url.touched && sourceForm.controls.url.invalid
               "
             />
-            <span class="hint">Adresse publique en http(s), ports 80 ou 443 uniquement.</span>
+            <span id="s-url-hint" class="hint"
+              >Adresse publique en http(s), ports 80 ou 443 uniquement.</span
+            >
           </div>
         </div>
-        <button class="btn btn-primary" type="submit" [disabled]="busy()">Ajouter la source</button>
+        <button
+          class="btn btn-primary"
+          type="submit"
+          [disabled]="busy()"
+          [attr.aria-busy]="busy()"
+        >
+          Ajouter la source
+        </button>
       </form>
     }
   </section>
+} @else if (!loadError()) {
+  <div class="loading" aria-hidden="true">
+    <span class="skeleton heading-line"></span>
+    <span class="skeleton"></span>
+    <span class="skeleton"></span>
+  </div>
 }

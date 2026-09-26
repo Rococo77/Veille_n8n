@@ -13,6 +13,7 @@ import { toCanvas } from 'qrcode';
 
 import { AuthStore, MfaEnrollment } from '../../core/auth.store';
 import { problemCode, problemMessage } from '../../core/problem';
+import { safeReturnPath } from '../../core/return-url';
 
 @Component({
   selector: 'app-mfa-page',
@@ -72,13 +73,19 @@ export class MfaPage {
       await this.auth.verify(this.form.controls.code.value);
       // Le secret n'a plus rien à faire en mémoire une fois le facteur validé.
       this.enrollment.set(null);
-      await this.router.navigateByUrl('/');
+      const retour = safeReturnPath(this.route.snapshot.queryParamMap.get('retour'));
+      await this.router.navigateByUrl(retour ?? '/');
     } catch (error) {
       this.handle(error);
       this.form.reset();
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Clé en blocs de 4 : plus facile à recopier sans erreur dans l'application. */
+  protected grouped(secret: string): string {
+    return secret.match(/.{1,4}/g)?.join(' ') ?? secret;
   }
 
   private handle(error: unknown): void {

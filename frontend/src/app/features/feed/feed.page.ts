@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  signal,
   untracked,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
@@ -11,6 +12,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { AuthStore } from '../../core/auth.store';
 import { CatalogApi } from '../../core/api';
 import { FeedStore } from '../../core/feed.store';
 import {
@@ -30,7 +32,11 @@ interface DaySection {
   articles: Article[];
 }
 
+/** Pourquoi le fil est vide : chaque cas appelle une action différente. */
+type EmptyReason = 'filtered' | 'no-theme' | 'no-group' | 'no-source' | 'awaiting-fetch';
+
 const TYPE_VALUES = new Set<string>(VEILLE_TYPES.map((t) => t.value));
+const MIN_QUERY = 2;
 const dayFormat = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
   day: 'numeric',
@@ -53,12 +59,15 @@ export class FeedPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly catalog = inject(CatalogApi);
+  protected readonly auth = inject(AuthStore);
   protected readonly feed = inject(FeedStore);
 
   protected readonly types = VEILLE_TYPES;
+  protected readonly minQuery = MIN_QUERY;
   protected readonly searchForm = new FormGroup({
     q: new FormControl('', { nonNullable: true }),
   });
+  protected readonly searchTooShort = signal(false);
 
   private readonly groupsRes = httpResource<Group[]>(() => {
     this.catalog.version();
@@ -70,6 +79,9 @@ export class FeedPage {
   });
   protected readonly groups = computed(() => valueOr(this.groupsRes, undefined) ?? []);
   protected readonly themes = computed(() => valueOr(this.themesRes, undefined) ?? []);
+  private readonly catalogReady = computed(
+    () => this.groupsRes.hasValue() && this.themesRes.hasValue(),
+  );
 
   private readonly params = toSignal(this.route.queryParamMap, { requireSync: true });
 
@@ -81,17 +93,63 @@ export class FeedPage {
       veille_type: type && TYPE_VALUES.has(type) ? (type as VeilleType) : undefined,
       theme_id: p.get('theme') ?? undefined,
       group_id: p.get('group') ?? undefined,
-      q: q.length >= 2 ? q.slice(0, 100) : undefined,
+      source_id: p.get('source') ?? undefined,
+      q: q.length >= MIN_QUERY ? q.slice(0, 100) : undefined,
     };
   });
 
-  protected readonly heading = computed(() => {
-    const f = this.filters();
-    if (f.group_id) return this.groups().find((g) => g.id === f.group_id)?.name ?? 'Groupe';
-    if (f.theme_id) return this.themes().find((t) => t.id === f.theme_id)?.name ?? 'Thème';
-    if (f.veille_type) return `Veille ${veilleTypeLabel(f.veille_type).toLowerCase()}`;
-    return 'Tout le fil';
+  protected readonly hasFilters = computed(() =>
+    Object.values(this.filters()).some((value) => value !== undefined),
+  );
+
+  /** Le nom de la source filtrée n'est connu que par les articles affichés. */
+  private readonly sourceName = computed(() => {
+    const id = this.filters().source_id;
+    return id ? this.feed.items().find((a) => a.source.id === id)?.source.name : undefined;
   });
+
+  /** Tous les filtres actifs, dans l'ordre du plus large au plus précis. */
+  protected readonly activeFilters = computed(() => {
+    const f = this.filters();
+    const parts: string[] = [];
+    if (f.veille_type) parts.push(`Veille ${veilleTypeLabel(f.veille_type).toLowerCase()}`);
+    if (f.theme_id) {
+      parts.push(`Thème ${this.themes().find((t) => t.id === f.theme_id)?.name ?? '…'}`);
+    }
+    if (f.group_id) {
+      parts.push(`Groupe ${this.groups().find((g) => g.id === f.group_id)?.name ?? '…'}`);
+    }
+    if (f.source_id) parts.push(`Source ${this.sourceName() ?? '…'}`);
+    if (f.q) parts.push(`« ${f.q} »`);
+    return parts;
+  });
+
+  protected readonly heading = computed(() => {
+    const [first] = this.activeFilters();
+    return first ?? 'Tout le fil';
+  });
+
+  protected readonly emptyReason = computed<EmptyReason>(() => {
+    if (this.hasFilters()) return 'filtered';
+    if (this.themes().length === 0) return 'no-theme';
+    const groups = this.groups();
+    if (groups.length === 0) return 'no-group';
+    if (groups.every((g) => g.source_count === 0)) return 'no-source';
+    return 'awaiting-fetch';
+  });
+
+  /** Premier groupe sans source : destination directe de l'étape « ajouter une source ». */
+  protected readonly firstEmptyGroup = computed(() =>
+    this.groups().find((g) => g.source_count === 0),
+  );
+
+  protected readonly showEmpty = computed(
+    () =>
+      !this.feed.loading() &&
+      !this.feed.error() &&
+      this.feed.items().length === 0 &&
+      (this.hasFilters() || this.catalogReady()),
+  );
 
   protected readonly sections = computed<DaySection[]>(() => {
     const today = new Date();
@@ -122,6 +180,7 @@ export class FeedPage {
       const filters = this.filters();
       untracked(() => {
         this.searchForm.controls.q.setValue(filters.q ?? '', { emitEvent: false });
+        this.searchTooShort.set(false);
         void this.feed.reset(filters);
       });
     });
@@ -145,9 +204,14 @@ export class FeedPage {
 
   protected submitSearch(): void {
     const q = this.searchForm.controls.q.value.trim();
+    if (q.length > 0 && q.length < MIN_QUERY) {
+      this.searchTooShort.set(true);
+      return;
+    }
+    this.searchTooShort.set(false);
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { q: q.length >= 2 ? q : null },
+      queryParams: { q: q || null },
       queryParamsHandling: 'merge',
     });
   }

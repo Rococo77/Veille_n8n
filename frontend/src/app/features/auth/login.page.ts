@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthStore } from '../../core/auth.store';
 import { problemMessage } from '../../core/problem';
+import { safeReturnPath } from '../../core/return-url';
 
 @Component({
   selector: 'app-login-page',
@@ -15,6 +16,10 @@ import { problemMessage } from '../../core/problem';
 export class LoginPage {
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly query = inject(ActivatedRoute).snapshot.queryParamMap;
+
+  protected readonly expired = this.query.get('motif') === 'expiree';
+  private readonly retour = safeReturnPath(this.query.get('retour'));
 
   protected readonly form = new FormGroup({
     email: new FormControl('', {
@@ -39,9 +44,9 @@ export class LoginPage {
     const { email, password } = this.form.getRawValue();
     try {
       const result = await this.auth.login(email, password);
-      await this.router.navigate(['/connexion/code'], {
-        queryParams: result.mfa_enrolled ? {} : { nouveau: 1 },
-      });
+      const queryParams: Record<string, string> = result.mfa_enrolled ? {} : { nouveau: '1' };
+      if (this.retour) queryParams['retour'] = this.retour;
+      await this.router.navigate(['/connexion/code'], { queryParams });
     } catch (error) {
       this.error.set(problemMessage(error));
       this.form.controls.password.reset();

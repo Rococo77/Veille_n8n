@@ -85,6 +85,7 @@ export interface ArticleFilters {
   veille_type?: VeilleType;
   theme_id?: string;
   group_id?: string;
+  source_id?: string;
   q?: string;
 }
 

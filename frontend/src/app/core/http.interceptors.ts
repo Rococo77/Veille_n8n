@@ -5,6 +5,7 @@ import { catchError, throwError } from 'rxjs';
 
 import { AuthStore } from './auth.store';
 import { problemCode } from './problem';
+import { safeReturnPath } from './return-url';
 
 const CSRF_COOKIES = ['__Host-veille_csrf', 'veille_csrf'];
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -47,9 +48,16 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: unknown) => {
       const isAuthCall = req.url.startsWith('/api/auth/');
       if (error instanceof HttpErrorResponse && error.status === 401 && !isAuthCall) {
+        // Une page chargée en parallèle peut déclencher plusieurs 401 : une seule redirection.
+        const wasSignedIn = auth.me() !== null;
         auth.markSignedOut();
-        const target = problemCode(error) === 'mfa-required' ? '/connexion/code' : '/connexion';
-        void router.navigateByUrl(target);
+        if (wasSignedIn) {
+          const mfa = problemCode(error) === 'mfa-required';
+          const retour = safeReturnPath(router.url);
+          const queryParams: Record<string, string> = mfa ? {} : { motif: 'expiree' };
+          if (retour && retour !== '/') queryParams['retour'] = retour;
+          void router.navigate([mfa ? '/connexion/code' : '/connexion'], { queryParams });
+        }
       }
       return throwError(() => error);
     }),

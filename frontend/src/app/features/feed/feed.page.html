@@ -1,85 +1,202 @@
 <header class="head">
   <h1>{{ heading() }}</h1>
+  @if (activeFilters().length > 1) {
+    <p class="active-filters">
+      <span class="visually-hidden">Filtres actifs :</span>
+      @for (part of activeFilters(); track part; let last = $last) {
+        <span>{{ part }}</span>
+        @if (!last) {
+          <span class="sep" aria-hidden="true">·</span>
+        }
+      }
+    </p>
+  }
 
   <form class="filters" [formGroup]="searchForm" (ngSubmit)="submitSearch()" role="search">
-    <label class="visually-hidden" for="f-type">Type de veille</label>
-    <select id="f-type" (change)="setFilter('type', $any($event.target).value)">
-      <option value="" [selected]="!filters().veille_type">Tous les types</option>
-      @for (t of types; track t.value) {
-        <option [value]="t.value" [selected]="t.value === filters().veille_type">
-          {{ t.label }}
-        </option>
-      }
-    </select>
+    <div class="filter">
+      <label for="f-type">Type</label>
+      <select id="f-type" (change)="setFilter('type', $any($event.target).value)">
+        <option value="" [selected]="!filters().veille_type">Tous les types</option>
+        @for (t of types; track t.value) {
+          <option [value]="t.value" [selected]="t.value === filters().veille_type">
+            {{ t.label }}
+          </option>
+        }
+      </select>
+    </div>
 
-    <label class="visually-hidden" for="f-theme">Thème</label>
-    <select id="f-theme" (change)="setFilter('theme', $any($event.target).value)">
-      <option value="" [selected]="!filters().theme_id">Tous les thèmes</option>
-      @for (t of themes(); track t.id) {
-        <option [value]="t.id" [selected]="t.id === filters().theme_id">{{ t.name }}</option>
-      }
-    </select>
+    <div class="filter">
+      <label for="f-theme">Thème</label>
+      <select id="f-theme" (change)="setFilter('theme', $any($event.target).value)">
+        <option value="" [selected]="!filters().theme_id">Tous les thèmes</option>
+        @for (t of themes(); track t.id) {
+          <option [value]="t.id" [selected]="t.id === filters().theme_id">{{ t.name }}</option>
+        }
+      </select>
+    </div>
 
-    <label class="visually-hidden" for="f-group">Groupe</label>
-    <select id="f-group" (change)="setFilter('group', $any($event.target).value)">
-      <option value="" [selected]="!filters().group_id">Tous les groupes</option>
-      @for (g of groups(); track g.id) {
-        <option [value]="g.id" [selected]="g.id === filters().group_id">{{ g.name }}</option>
-      }
-    </select>
+    <div class="filter">
+      <label for="f-group">Groupe</label>
+      <select id="f-group" (change)="setFilter('group', $any($event.target).value)">
+        <option value="" [selected]="!filters().group_id">Tous les groupes</option>
+        @for (g of groups(); track g.id) {
+          <option [value]="g.id" [selected]="g.id === filters().group_id">{{ g.name }}</option>
+        }
+      </select>
+    </div>
 
-    <label class="visually-hidden" for="f-q">Rechercher dans les titres</label>
-    <input
-      id="f-q"
-      type="search"
-      formControlName="q"
-      placeholder="Rechercher un titre"
-      maxlength="100"
-    />
+    <div class="filter search">
+      <label for="f-q">Titre contenant</label>
+      <div class="search-row">
+        <input
+          id="f-q"
+          type="search"
+          formControlName="q"
+          maxlength="100"
+          enterkeyhint="search"
+          [attr.aria-invalid]="searchTooShort()"
+          [attr.aria-describedby]="searchTooShort() ? 'f-q-error' : null"
+        />
+        <button class="btn" type="submit">Rechercher</button>
+      </div>
+      @if (searchTooShort()) {
+        <span id="f-q-error" class="field-error">{{ minQuery }} caractères minimum.</span>
+      }
+    </div>
   </form>
+
+  @if (hasFilters()) {
+    <p class="clear">
+      <button type="button" class="btn-link" (click)="clearFilters()">Retirer les filtres</button>
+    </p>
+  }
 </header>
 
 @if (feed.error(); as error) {
   <p class="alert" role="alert">{{ error }}</p>
 }
 
+@if (feed.loading() && feed.items().length === 0) {
+  <div class="loading" aria-hidden="true">
+    @for (i of [1, 2, 3]; track i) {
+      <div class="item">
+        <span class="skeleton title-line"></span>
+        <span class="skeleton"></span>
+        <span class="skeleton meta-line"></span>
+      </div>
+    }
+  </div>
+}
+
 @for (section of sections(); track section.key) {
   <section class="day" [attr.aria-labelledby]="'day-' + section.key">
     <h2 class="day-label" [id]="'day-' + section.key">{{ section.label }}</h2>
     @for (a of section.articles; track a.id) {
-      <article class="item" [style.--theme]="a.theme.color">
+      <article class="item">
         <h3 class="title">
-          <a [href]="a.link" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
+          <a [href]="a.link" target="_blank" rel="noopener noreferrer"
+            >{{ a.title }}<span class="visually-hidden"> (nouvel onglet)</span></a
+          >
         </h3>
         @if (a.snippet) {
           <p class="snippet">{{ a.snippet }}</p>
         }
         <p class="meta">
           <time [attr.datetime]="a.published_at">{{ time(a.published_at) }}</time>
-          <span>{{ a.source.name }}</span>
-          <a [routerLink]="[]" [queryParams]="{ group: a.group.id }">{{ a.group.name }}</a>
+          <span class="visually-hidden">, </span>
+          <a class="theme" [routerLink]="[]" [queryParams]="{ theme: a.theme.id }">
+            <span class="swatch" [style.background]="a.theme.color" aria-hidden="true"></span>
+            {{ a.theme.name }}
+          </a>
+          <span class="visually-hidden">, </span>
           <span class="type">{{ typeLabel(a.group.veille_type) }}</span>
+          <span class="visually-hidden">, groupe </span>
+          <a [routerLink]="[]" [queryParams]="{ group: a.group.id }">{{ a.group.name }}</a>
+          <span class="visually-hidden">, source </span>
+          <a [routerLink]="[]" [queryParams]="{ source: a.source.id }">{{ a.source.name }}</a>
         </p>
       </article>
     }
   </section>
-} @empty {
-  @if (!feed.loading() && !feed.error()) {
-    <div class="empty">
-      <p>Aucun article ne correspond à ces filtres.</p>
-      <p class="muted small">
-        Les flux sont relevés toutes les deux heures. Ajoutez des sources dans
-        <a routerLink="/groupes">Groupes et sources</a>, ou
-        <button type="button" class="btn-link" (click)="clearFilters()">retirez les filtres</button
-        >.
-      </p>
-    </div>
-  }
+}
+
+@if (showEmpty()) {
+  <div class="empty" role="status">
+    @switch (emptyReason()) {
+      @case ('filtered') {
+        <h2>Aucun article pour ces filtres</h2>
+        <p class="muted">
+          Élargissez la recherche ou
+          <button type="button" class="btn-link" (click)="clearFilters()">
+            retirez les filtres</button
+          >.
+        </p>
+      }
+      @case ('awaiting-fetch') {
+        <h2>Premier relevé en attente</h2>
+        <p class="muted">
+          Les sources sont en place. n8n les relève toutes les deux heures : les premiers
+          articles apparaîtront ici au prochain passage.
+        </p>
+        <p><a routerLink="/groupes">Voir l'état des sources</a></p>
+      }
+      @default {
+        @if (auth.isEditor()) {
+          <h2>Mettre en place la veille</h2>
+          <p class="muted">Trois étapes, ensuite n8n relève les flux toutes les deux heures.</p>
+          <ol class="steps">
+            <li [class.done]="emptyReason() !== 'no-theme'">
+              <div class="step-body">
+                <p>
+                  <strong>Créer un thème</strong> : le sujet suivi, par exemple « Cloud » ou
+                  « Concurrents ».
+                </p>
+                @if (emptyReason() === 'no-theme') {
+                  <a class="btn btn-primary" routerLink="/themes">Créer un thème</a>
+                } @else {
+                  <span class="state">Fait</span>
+                }
+              </div>
+            </li>
+            <li
+              [class.done]="emptyReason() === 'no-source'"
+              [class.pending]="emptyReason() === 'no-theme'"
+            >
+              <div class="step-body">
+                <p><strong>Créer un groupe</strong> : un type de veille et un thème.</p>
+                @if (emptyReason() === 'no-group') {
+                  <a class="btn btn-primary" routerLink="/groupes">Créer un groupe</a>
+                } @else if (emptyReason() === 'no-source') {
+                  <span class="state">Fait</span>
+                }
+              </div>
+            </li>
+            <li [class.pending]="emptyReason() !== 'no-source'">
+              <div class="step-body">
+                <p><strong>Ajouter une source</strong> : l'adresse d'un flux RSS ou Atom.</p>
+                @if (emptyReason() === 'no-source' && firstEmptyGroup(); as g) {
+                  <a class="btn btn-primary" [routerLink]="['/groupes', g.id]"
+                    >Ajouter une source</a
+                  >
+                }
+              </div>
+            </li>
+          </ol>
+        } @else {
+          <h2>La veille n'est pas encore configurée</h2>
+          <p class="muted">
+            Aucune source n'est suivie pour l'instant. Les éditeurs de l'équipe ajoutent les flux ;
+            les articles apparaîtront ici dès le premier relevé.
+          </p>
+        }
+      }
+    }
+  </div>
 }
 
 <div class="more" aria-live="polite">
-  @if (feed.loading()) {
-    <p class="muted">Chargement des articles…</p>
+  @if (feed.loading() && feed.items().length > 0) {
+    <p class="muted">Chargement des articles plus anciens…</p>
   } @else if (feed.hasMore()) {
     <button type="button" class="btn" (click)="feed.loadMore()">
       Charger les articles plus anciens

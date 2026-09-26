@@ -5,7 +5,7 @@
 .skip:focus {
   left: var(--space-4);
   top: var(--space-4);
-  z-index: 10;
+  z-index: 20;
   background: var(--surface);
   padding: var(--space-2) var(--space-3);
 }
@@ -14,6 +14,11 @@
   display: grid;
   grid-template-columns: var(--rail) minmax(0, 1fr);
   min-height: 100dvh;
+}
+
+/* La barre compacte n'existe que sous 52rem. */
+.topbar {
+  display: none;
 }
 
 .rail {
@@ -55,6 +60,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: 2.25rem;
   padding: 0.35rem var(--space-2);
   border-radius: var(--radius);
   color: var(--ink);
@@ -65,8 +71,11 @@
 }
 .rail li a.active {
   background: var(--surface);
-  box-shadow: inset 3px 0 0 var(--signal);
+  box-shadow: inset 0 0 0 1px var(--rule);
   font-weight: 600;
+}
+.rail li a.empty {
+  color: var(--muted);
 }
 
 .count {
@@ -95,6 +104,7 @@
 }
 .who .btn-link {
   justify-self: start;
+  min-height: var(--target);
 }
 
 .main {
@@ -105,13 +115,76 @@
 @media (max-width: 52rem) {
   .frame {
     grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
   }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+  }
+  .topbar .brand {
+    font-size: var(--step-1);
+    padding-inline: 0;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--target);
+    padding: 0 var(--space-3);
+    font: inherit;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--field);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .menu-toggle svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .badge {
+    min-width: 1.4rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: var(--alert);
+    color: var(--surface);
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  /* Le fil d'abord : la navigation ne s'affiche que sur demande. */
   .rail {
+    display: none;
     position: static;
     height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--rule);
+    background: var(--paper);
   }
+  .rail.open {
+    display: flex;
+  }
+  .rail-brand {
+    display: none;
+  }
+  .rail li a {
+    min-height: var(--target);
+  }
+
   .main {
     padding: var(--space-5) var(--space-4);
   }
