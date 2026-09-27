@@ -14,13 +14,14 @@ dependencies = [
     "argon2-cffi>=23.1",
     "pyotp>=2.9",
     "cryptography>=42",
+    # Client HTTP asynchrone pour l'API d'envoi de mails ; urllib bloquerait la boucle.
+    "httpx>=0.27",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.23",
-    "httpx>=0.27",
     "ruff>=0.5",
 ]
 

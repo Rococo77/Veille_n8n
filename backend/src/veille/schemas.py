@@ -181,8 +181,15 @@ class ArticlePage(Out):
 
 
 class UserIn(Strict):
+    """Création avec mot de passe : réservée à la CLI d'amorçage du premier admin."""
+
     email: Email
     password: Password
+    role: Role = "viewer"
+
+
+class UserInviteIn(Strict):
+    email: Email
     role: Role = "viewer"
 
 
@@ -199,6 +206,35 @@ class UserOut(Out):
     totp_confirmed: bool
     locked_until: datetime | None
     created_at: datetime
+    # Faux tant que l'invitation n'a pas été acceptée.
+    has_password: bool
+
+
+class InvitationOut(Out):
+    user: UserOut
+    mail_sent: bool
+    expires_at: datetime
+    # Renvoyé seulement si le mail n'est pas parti : l'admin le transmet lui-même.
+    invitation_url: str | None
+
+
+# Jeton issu de secrets.token_urlsafe(32) : 43 caractères base64url.
+InvitationToken = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{32,64}$")]
+
+
+class InvitationLookupIn(Strict):
+    token: InvitationToken
+
+
+class InvitationInfoOut(Out):
+    email: str
+    role: Role
+    expires_at: datetime
+
+
+class InvitationAcceptIn(Strict):
+    token: InvitationToken
+    password: Password
 
 
 class AuditOut(Out):
@@ -246,3 +282,4 @@ class PurgeOut(Out):
     articles: int
     audit_events: int
     sessions: int
+    invitations: int

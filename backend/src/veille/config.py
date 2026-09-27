@@ -26,6 +26,18 @@ class Settings(BaseSettings):
     # pouvoir vider la base en demandant une rétention nulle.
     article_retention_days: int = Field(default=180, ge=7, le=3650)
     audit_retention_days: int = Field(default=365, ge=30, le=3650)
+
+    # Invitations : le lien pointe vers le front, le jeton voyage dans le fragment (#) et
+    # n'apparaît donc dans aucun journal d'accès.
+    public_base_url: str = Field(
+        default="https://veille-n8n.vercel.app", pattern=r"^https?://[^/\s]+$"
+    )
+    invitation_hours: int = Field(default=48, ge=1, le=168)
+    # Sans clé, aucun mail ne part : l'admin reçoit le lien pour le transmettre lui-même.
+    mail_api_key: SecretStr | None = None
+    mail_from: str = "veille@bytenorth.fr"
+    mail_from_name: str = "Veille ByteNorth"
+    mail_reply_to: str | None = "contact@bytenorth.fr"
     enable_docs: bool = False
 
     @property

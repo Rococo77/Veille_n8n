@@ -10,7 +10,7 @@ from veille.services.sessions import IssuedSession
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-def _set_cookies(response: Response, settings: Settings, issued: IssuedSession) -> None:
+def set_session_cookies(response: Response, settings: Settings, issued: IssuedSession) -> None:
     common = {
         "secure": settings.cookie_secure,
         "samesite": "strict",
@@ -34,7 +34,7 @@ async def login(
     issued, user = await auth.login(
         db, data, settings, ip=ip, user_agent=request.headers.get("user-agent"), now=utcnow()
     )
-    _set_cookies(response, settings, issued)
+    set_session_cookies(response, settings, issued)
     return LoginOut(mfa_enrolled=user.totp_confirmed)
 
 
@@ -64,7 +64,7 @@ async def mfa_verify(
         user_agent=request.headers.get("user-agent"),
         now=utcnow(),
     )
-    _set_cookies(response, settings, issued)
+    set_session_cookies(response, settings, issued)
     return MeOut.model_validate(ctx.user)
 
 

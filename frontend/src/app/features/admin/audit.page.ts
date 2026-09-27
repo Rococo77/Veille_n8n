@@ -17,6 +17,10 @@ const ACTIONS: Record<string, string> = {
   logout: 'Déconnexion',
   'password.changed': 'Mot de passe modifié',
   'user.created': 'Compte créé',
+  'user.invited': 'Compte créé (invitation)',
+  'invitation.reissued': "Lien d'activation renvoyé",
+  'invitation.mail_not_sent': "Mail d'invitation non envoyé",
+  'invitation.accepted': 'Invitation acceptée',
   'user.updated': 'Compte modifié',
   'user.mfa_reset': 'Second facteur réinitialisé',
   'user.unlocked': 'Compte déverrouillé',
@@ -30,6 +34,7 @@ const ACTIONS: Record<string, string> = {
   'source.updated': 'Source modifiée',
   'source.deleted': 'Source supprimée',
   'ingest.failed': 'Relevé de flux en échec',
+  'maintenance.purge': 'Purge des données anciennes',
 };
 
 @Component({
@@ -39,8 +44,8 @@ const ACTIONS: Record<string, string> = {
     <header class="head">
       <h1>Journal d'audit</h1>
       <p class="muted">
-        Les {{ limit() }} derniers événements de sécurité et de modification, du plus récent au
-        plus ancien.
+        Les {{ limit() }} derniers événements de sécurité et de modification, du plus récent au plus
+        ancien.
       </p>
     </header>
     @if (loadError(); as message) {
@@ -83,7 +88,11 @@ const ACTIONS: Record<string, string> = {
             @if (!loading() && !loadError()) {
               <tr>
                 <td colspan="5" class="muted">
-                  {{ alertsOnly() ? 'Aucune alerte parmi ces événements.' : 'Aucun événement enregistré.' }}
+                  {{
+                    alertsOnly()
+                      ? 'Aucune alerte parmi ces événements.'
+                      : 'Aucun événement enregistré.'
+                  }}
                 </td>
               </tr>
             }

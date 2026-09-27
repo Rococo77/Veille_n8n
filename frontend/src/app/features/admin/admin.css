@@ -16,7 +16,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: 1.4fr 1.4fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: var(--space-3);
 }
 
@@ -54,4 +54,17 @@
     border: 0;
     padding: var(--space-1) 0;
   }
+}
+
+.invite-link p {
+  margin: 0 0 var(--space-3);
+}
+.link-row {
+  display: flex;
+  gap: var(--space-3);
+}
+.link-row input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-code);
 }

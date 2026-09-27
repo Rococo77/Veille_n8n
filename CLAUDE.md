@@ -62,7 +62,7 @@ vérité ; n8n n'est qu'un worker sans état.
 ```bash
 # Backend : Postgres local via `docker compose up -d db`
 cd backend && python -m venv .venv && . .venv/bin/activate && pip install -e '.[dev]'
-VEILLE_TEST_DATABASE_URL=postgresql+asyncpg://veille:veille@127.0.0.1:5432/veille pytest   # 30 tests
+VEILLE_TEST_DATABASE_URL=postgresql+asyncpg://veille:veille@127.0.0.1:5432/veille pytest   # 33 tests
 ruff check src tests alembic && ruff format --check src tests alembic
 
 # Frontend (Node ≥ 22.22.3 ou 24 ; sinon `npx -y node@24 node_modules/@angular/cli/bin/ng.js build`)
@@ -75,7 +75,7 @@ Ne pas passer à SQLite ni à `create_all`.
 ## État
 
 - **Fait et vérifié** :
-  - Backend complet, 30 tests passent.
+  - Backend complet, 33 tests passent.
   - Durcissements (2026-09-26) : argon2 hors boucle d'événements (2 calculs max, 503 au-delà
     de 5 s d'attente), verrouillage fixe 15 min + compteur atomique, `POST /api/internal/purge`
     (rétention `VEILLE_ARTICLE_RETENTION_DAYS`=180 / `VEILLE_AUDIT_RETENTION_DAYS`=365).
@@ -83,8 +83,15 @@ Ne pas passer à SQLite ni à `create_all`.
     shell refaits. « Nouveau » = `fetched_at` après la visite précédente (`core/last-visit.ts`).
     Mobile : déconnexion et liens admin sur la page Compte (la barre d'onglets n'a que 4
     entrées). Revue finale du contrat et `DESIGN.md` : pas faits.
+  - Invitations (migration `0003`) : l'admin saisit email + rôle, le compte n'a pas de mot
+    de passe ; lien à usage unique `…/invitation#<jeton>` (48 h, SHA-256 en base, jeton dans
+    le fragment puis dans le corps JSON, jamais dans une URL serveur). Accepter = choisir son
+    mot de passe → session pré-MFA → enrôlement TOTP. Renvoyer révoque le lien précédent ;
+    sert aussi de réinitialisation de mot de passe. Mail via Brevo (`VEILLE_MAIL_API_KEY`) ;
+    sans clé, le panel affiche le lien. La CLI `veille-admin` reste le seul chemin avec mot de
+    passe (amorçage).
   - Build Angular prod OK.
-  - Migrations `0001` et `0002`.
+  - Migrations `0001` à `0003`.
 - **Déployé (2026-09-25)** :
   - Supabase : projet `veille` (`pcvnjayllvarhqpzhfff`, eu-west-3), rôle `veille_app`, pooler
     session `aws-1-eu-west-3.pooler.supabase.com:5432`. Migrations à `0002`, RLS actif,
@@ -112,11 +119,15 @@ Ne pas passer à SQLite ni à `create_all`.
 
 1. **Recette fonctionnelle** : thèmes et groupes créés depuis le site ; reste la première
    source → premier relevé n8n → fil filtré.
-2. **Alerte n8n** : un push en échec fait échouer l'exécution (nœud « Fail If Any Push
+2. **Brevo** : compte, domaine `bytenorth.fr` authentifié (DKIM/SPF/DMARC dans la zone OVH,
+   SPF existant à compléter et non dupliquer), clé API dans Render (`VEILLE_MAIL_API_KEY`).
+3. **Alerte n8n** : un push en échec fait échouer l'exécution (nœud « Fail If Any Push
    Failed »), mais aucun canal de notification n'est branché (pas de credential mail/Slack).
-3. **Pare-feu de sortie du conteneur n8n** : le rebinding DNS et les redirections
+4. **Pare-feu de sortie du conteneur n8n** : le rebinding DNS et les redirections
    contournent `url_policy.py`.
 
 ## Points non vérifiés ([PROBABLE])
+
+- Render gratuit bloquerait le SMTP sortant : d'où l'API HTTPS de Brevo.
 
 - Limites actuelles de l'offre gratuite Render (750 h/mois, endormissement après 15 min).

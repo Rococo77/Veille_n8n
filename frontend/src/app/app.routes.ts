@@ -10,6 +10,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login.page').then((m) => m.LoginPage),
   },
   {
+    path: 'invitation',
+    canMatch: [guestOnly],
+    title: 'Activer votre compte — Veille',
+    loadComponent: () => import('./features/auth/invitation.page').then((m) => m.InvitationPage),
+  },
+  {
     path: 'connexion/code',
     title: 'Vérification — Veille',
     loadComponent: () => import('./features/auth/mfa.page').then((m) => m.MfaPage),

@@ -18,6 +18,7 @@ from veille.main import create_app
 from veille.models import User
 from veille.security import TotpCipher, hash_password
 from veille.services import sessions
+from veille.services.mail import Mail
 
 DB_URL = os.environ.get(
     "VEILLE_TEST_DATABASE_URL", "postgresql+asyncpg://veille:veille@127.0.0.1:55432/veille_test"
@@ -88,9 +89,25 @@ async def db(engine) -> AsyncIterator[AsyncSession]:  # type: ignore[no-untyped-
         yield session
 
 
+class FakeMailer:
+    def __init__(self) -> None:
+        self.sent: list[Mail] = []
+        self.accept = True
+
+    async def send(self, mail: Mail) -> bool:
+        if self.accept:
+            self.sent.append(mail)
+        return self.accept
+
+
 @pytest.fixture
-async def app(settings: Settings):  # type: ignore[no-untyped-def]
-    application = create_app(settings, resolver=fake_resolver)
+def mailer() -> FakeMailer:
+    return FakeMailer()
+
+
+@pytest.fixture
+async def app(settings: Settings, mailer: FakeMailer):  # type: ignore[no-untyped-def]
+    application = create_app(settings, resolver=fake_resolver, mailer=mailer)
     async with application.router.lifespan_context(application):
         yield application
 

@@ -7,8 +7,9 @@ from fastapi import FastAPI, Request, Response
 from veille.config import Settings, get_settings
 from veille.db import build_engine, build_sessionmaker
 from veille.errors import DomainError, install_error_handlers, problem_response
-from veille.routes import admin, articles, auth, catalog, internal
+from veille.routes import admin, articles, auth, catalog, internal, invitations
 from veille.security import TotpCipher
+from veille.services.mail import Mailer, build_mailer
 from veille.url_policy import Resolver, system_resolver
 
 _UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
@@ -21,7 +22,11 @@ _SECURITY_HEADERS = {
 }
 
 
-def create_app(settings: Settings | None = None, resolver: Resolver | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    resolver: Resolver | None = None,
+    mailer: Mailer | None = None,
+) -> FastAPI:
     settings = settings or get_settings()
 
     @asynccontextmanager
@@ -35,6 +40,7 @@ def create_app(settings: Settings | None = None, resolver: Resolver | None = Non
         app.state.sessionmaker = build_sessionmaker(engine)
         app.state.totp_cipher = TotpCipher(settings.totp_encryption_key.get_secret_value())
         app.state.resolver = resolver or system_resolver
+        app.state.mailer = mailer or build_mailer(settings)
         try:
             yield
         finally:
@@ -79,7 +85,7 @@ def create_app(settings: Settings | None = None, resolver: Resolver | None = Non
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    for module in (auth, catalog, articles, admin, internal):
+    for module in (auth, invitations, catalog, articles, admin, internal):
         app.include_router(module.router)
     return app
 

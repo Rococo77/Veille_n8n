@@ -4,7 +4,7 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from veille.config import Settings
-from veille.models import Article, AuditEvent, UserSession
+from veille.models import Article, AuditEvent, Invitation, UserSession
 from veille.schemas import PurgeOut
 from veille.services import audit
 
@@ -23,10 +23,12 @@ async def purge(db: AsyncSession, settings: Settings, *, ip: str | None, now: da
         )
     )
     expired = await db.execute(delete(UserSession).where(UserSession.expires_at < now))
+    stale_invitations = await db.execute(delete(Invitation).where(Invitation.expires_at < now))
     result = PurgeOut(
         articles=articles.rowcount,  # type: ignore[attr-defined]
         audit_events=events.rowcount,  # type: ignore[attr-defined]
         sessions=expired.rowcount,  # type: ignore[attr-defined]
+        invitations=stale_invitations.rowcount,  # type: ignore[attr-defined]
     )
     # Écrit après la purge : l'événement survit à sa propre exécution.
     audit.record(db, action="maintenance.purge", service=True, ip=ip, details=result.model_dump())

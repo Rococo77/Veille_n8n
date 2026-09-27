@@ -12,7 +12,8 @@
   text-align: center;
 }
 
-form {
+form,
+.panel-card {
   width: min(24rem, 100%);
   background: var(--surface);
   border: 1px solid var(--rule);

@@ -5,7 +5,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AdminApi } from '../../core/api';
 import { AuthStore } from '../../core/auth.store';
 import { ConfirmService } from '../../core/confirm';
-import { Role, User } from '../../core/models';
+import { InvitationResult, Role, User } from '../../core/models';
 import { problemMessage } from '../../core/problem';
 import { errorOf, valueOr } from '../../core/resource';
 
@@ -20,6 +20,13 @@ const ROLE_EFFECT: Record<Role, string> = {
   editor: 'Ce compte pourra gérer thèmes, groupes et sources.',
   admin: 'Ce compte pourra gérer tous les comptes et lire le journal d’audit.',
 };
+
+const expiryFormat = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'long',
+  hour: '2-digit',
+  minute: '2-digit',
+});
 
 function roleLabel(role: Role): string {
   return ROLES.find((r) => r.value === role)?.label ?? role;
@@ -45,7 +52,9 @@ export class UsersPage {
   });
   protected readonly users = computed(() => valueOr(this.usersRes, undefined) ?? []);
   protected readonly loadError = computed(() => errorOf(this.usersRes));
-  protected readonly loading = computed(() => this.usersRes.isLoading() && !this.usersRes.hasValue());
+  protected readonly loading = computed(
+    () => this.usersRes.isLoading() && !this.usersRes.hasValue(),
+  );
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -54,12 +63,16 @@ export class UsersPage {
       nonNullable: true,
       validators: [Validators.required, Validators.email, Validators.maxLength(254)],
     }),
-    password: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(12), Validators.maxLength(256)],
-    }),
     role: new FormControl<Role>('viewer', { nonNullable: true }),
   });
+
+  /** Dernière invitation émise : confirmation, ou lien à transmettre si le mail n'est pas parti. */
+  protected readonly invitation = signal<InvitationResult | null>(null);
+  protected readonly copied = signal(false);
+
+  protected expiry(iso: string): string {
+    return expiryFormat.format(new Date(iso));
+  }
 
   protected isLocked(user: User): boolean {
     return !!user.locked_until && new Date(user.locked_until) > new Date();
@@ -85,7 +98,42 @@ export class UsersPage {
       this.form.markAllAsTouched();
       return;
     }
-    if (await this.run(() => this.api.createUser(this.form.getRawValue()))) this.form.reset();
+    await this.issue(() => this.api.inviteUser(this.form.getRawValue()), true);
+  }
+
+  async reinvite(user: User): Promise<void> {
+    if (user.has_password) {
+      const ok = await this.confirm.ask({
+        title: 'Envoyer un lien de nouveau mot de passe ?',
+        body: `${user.email} recevra un lien valable 48 h pour choisir un nouveau mot de passe. L'actuel reste valable jusqu'à l'utilisation du lien ; ses sessions seront alors fermées.`,
+        confirmLabel: 'Envoyer le lien',
+      });
+      if (!ok) return;
+    }
+    await this.issue(() => this.api.reinvite(user.id), false);
+  }
+
+  private async issue(action: () => Promise<InvitationResult>, resetForm: boolean): Promise<void> {
+    this.invitation.set(null);
+    this.copied.set(false);
+    let result: InvitationResult | null = null;
+    const ok = await this.run(async () => {
+      result = await action();
+    });
+    if (!ok || !result) return;
+    this.invitation.set(result);
+    if (resetForm) this.form.reset();
+  }
+
+  async copyLink(url: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(url);
+      this.copied.set(true);
+    } catch {
+      // Presse-papiers refusé (contexte non sécurisé, permission) : le lien reste
+      // affiché et sélectionnable à la main.
+      this.copied.set(false);
+    }
   }
 
   /**

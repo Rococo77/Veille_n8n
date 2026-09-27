@@ -58,7 +58,8 @@ class User(Timestamps, Base):
         Uuid, primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()")
     )
     email: Mapped[str] = mapped_column(String(254))
-    password_hash: Mapped[str] = mapped_column(String(255))
+    # Absent tant que l'invitation n'est pas acceptée.
+    password_hash: Mapped[str | None] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(16))
     is_active: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
     totp_secret_enc: Mapped[str | None] = mapped_column(Text)
@@ -66,6 +67,10 @@ class User(Timestamps, Base):
     totp_last_step: Mapped[int | None] = mapped_column(BigInteger)
     failed_logins: Mapped[int] = mapped_column(server_default=text("0"), default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    @property
+    def has_password(self) -> bool:
+        return self.password_hash is not None
 
 
 class UserSession(Base):
@@ -88,6 +93,28 @@ class UserSession(Base):
     user_agent: Mapped[str | None] = mapped_column(String(255))
 
     user: Mapped[User] = relationship(lazy="raise")
+
+
+class Invitation(Base):
+    __tablename__ = "invitations"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_invitations_token_hash"),
+        UniqueConstraint("user_id", name="uq_invitations_user"),
+        CheckConstraint("expires_at > created_at", name="ck_invitations_expiry"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()")
+    )
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary(32))
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE", name="fk_invitations_user")
+    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL", name="fk_invitations_created_by")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class Theme(Timestamps, Base):

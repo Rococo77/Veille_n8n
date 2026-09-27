@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { Me, Role } from './models';
+import { InvitationInfo, Me, Role } from './models';
 
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
 
@@ -47,6 +47,17 @@ export class AuthStore {
   async login(email: string, password: string): Promise<{ mfa_enrolled: boolean }> {
     return firstValueFrom(
       this.http.post<{ mfa_enrolled: boolean }>('/api/auth/login', { email, password }),
+    );
+  }
+
+  /** Le jeton part dans le corps, jamais dans l'URL : aucun journal d'accès ne le voit. */
+  async lookupInvitation(token: string): Promise<InvitationInfo> {
+    return firstValueFrom(this.http.post<InvitationInfo>('/api/invitations/lookup', { token }));
+  }
+
+  async acceptInvitation(token: string, password: string): Promise<{ mfa_enrolled: boolean }> {
+    return firstValueFrom(
+      this.http.post<{ mfa_enrolled: boolean }>('/api/invitations/accept', { token, password }),
     );
   }
 

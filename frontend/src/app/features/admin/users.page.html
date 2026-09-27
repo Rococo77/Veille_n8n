@@ -10,6 +10,34 @@
   <p class="alert" role="alert">{{ message }}</p>
 }
 
+@if (invitation(); as inv) {
+  @if (inv.mail_sent) {
+    <p class="notice" role="status">
+      Lien envoyé à {{ inv.user.email }}. Il est valable jusqu'au {{ expiry(inv.expires_at) }}.
+    </p>
+  } @else if (inv.invitation_url; as url) {
+    <div class="notice invite-link" role="status">
+      <p>
+        <strong>Le mail n'est pas parti.</strong> Transmettez ce lien à {{ inv.user.email }} par un
+        canal sûr : il ouvre le compte, fonctionne une seule fois et expire le
+        {{ expiry(inv.expires_at) }}.
+      </p>
+      <div class="link-row">
+        <input
+          type="text"
+          readonly
+          [value]="url"
+          aria-label="Lien d'invitation"
+          (focus)="$any($event.target).select()"
+        />
+        <button type="button" class="btn" (click)="copyLink(url)">
+          {{ copied() ? 'Copié' : 'Copier' }}
+        </button>
+      </div>
+    </div>
+  }
+}
+
 <div class="table-wrap">
   <table class="table users">
     <thead>
@@ -59,7 +87,9 @@
             }
           </td>
           <td>
-            @if (!u.is_active) {
+            @if (!u.has_password) {
+              <span class="muted">Invitation en attente</span>
+            } @else if (!u.is_active) {
               <span class="status-error">Désactivé</span>
             } @else if (isLocked(u)) {
               <span class="status-error">Verrouillé</span>
@@ -80,18 +110,18 @@
                   {{ u.is_active ? 'Désactiver' : 'Réactiver' }}
                 </button>
                 @if (u.totp_confirmed) {
-                  <button
-                    class="btn-link"
-                    type="button"
-                    [disabled]="busy()"
-                    (click)="resetMfa(u)"
-                  >
+                  <button class="btn-link" type="button" [disabled]="busy()" (click)="resetMfa(u)">
                     Réinitialiser le 2FA
                   </button>
                 }
                 @if (isLocked(u)) {
                   <button class="btn-link" type="button" [disabled]="busy()" (click)="unlock(u)">
                     Déverrouiller
+                  </button>
+                }
+                @if (u.is_active) {
+                  <button class="btn-link" type="button" [disabled]="busy()" (click)="reinvite(u)">
+                    {{ u.has_password ? 'Nouveau mot de passe' : "Renvoyer l'invitation" }}
                   </button>
                 }
               </div>
@@ -117,20 +147,6 @@
       />
     </div>
     <div class="field">
-      <label for="u-password">Mot de passe initial</label>
-      <input
-        id="u-password"
-        type="password"
-        formControlName="password"
-        autocomplete="new-password"
-        aria-describedby="u-password-hint"
-        [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
-      />
-      <span id="u-password-hint" class="hint"
-        >12 caractères minimum. Transmettez-le hors de cet outil.</span
-      >
-    </div>
-    <div class="field">
       <label for="u-role">Rôle</label>
       <select id="u-role" formControlName="role">
         @for (r of roles; track r.value) {
@@ -139,7 +155,11 @@
       </select>
     </div>
   </div>
+  <p class="hint">
+    La personne reçoit un lien pour choisir elle-même son mot de passe puis configurer son second
+    facteur. Vous ne connaissez jamais son mot de passe.
+  </p>
   <button class="btn btn-primary" type="submit" [disabled]="busy()" [attr.aria-busy]="busy()">
-    Créer le compte
+    Envoyer l'invitation
   </button>
 </form>

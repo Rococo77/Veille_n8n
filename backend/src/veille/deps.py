@@ -11,6 +11,7 @@ from veille.db import utcnow
 from veille.errors import DomainError, forbidden, unauthorized
 from veille.security import TotpCipher, constant_time_equals, sha256
 from veille.services import sessions
+from veille.services.mail import Mailer
 from veille.services.sessions import AuthContext
 from veille.url_policy import Resolver
 
@@ -32,6 +33,10 @@ def get_cipher(request: Request) -> TotpCipher:
     return request.app.state.totp_cipher
 
 
+def get_mailer(request: Request) -> Mailer:
+    return request.app.state.mailer
+
+
 def get_resolver(request: Request) -> Resolver:
     return request.app.state.resolver
 
@@ -46,6 +51,7 @@ Db = Annotated[AsyncSession, Depends(get_db)]
 AppSettings = Annotated[Settings, Depends(get_settings)]
 Cipher = Annotated[TotpCipher, Depends(get_cipher)]
 UrlResolver = Annotated[Resolver, Depends(get_resolver)]
+AppMailer = Annotated[Mailer, Depends(get_mailer)]
 ClientIp = Annotated[str | None, Depends(client_ip)]
 
 

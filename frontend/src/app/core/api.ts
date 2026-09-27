@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { GroupDetail, GroupInput, Source, Theme, User, Role } from './models';
+import { GroupDetail, GroupInput, InvitationResult, Role, Source, Theme, User } from './models';
 
 /** Mutations uniquement : les lectures passent par httpResource dans les pages. */
 @Injectable({ providedIn: 'root' })
@@ -78,8 +78,14 @@ export class CatalogApi {
 export class AdminApi {
   private readonly http = inject(HttpClient);
 
-  createUser(input: { email: string; password: string; role: Role }): Promise<User> {
-    return firstValueFrom(this.http.post<User>('/api/users', input));
+  inviteUser(input: { email: string; role: Role }): Promise<InvitationResult> {
+    return firstValueFrom(this.http.post<InvitationResult>('/api/users', input));
+  }
+
+  reinvite(id: string): Promise<InvitationResult> {
+    return firstValueFrom(
+      this.http.post<InvitationResult>(`/api/users/${encodeURIComponent(id)}/invitation`, null),
+    );
   }
 
   updateUser(id: string, input: Partial<{ role: Role; is_active: boolean }>): Promise<User> {

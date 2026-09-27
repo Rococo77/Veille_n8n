@@ -97,6 +97,8 @@ export interface User {
   is_active: boolean;
   totp_confirmed: boolean;
   locked_until: string | null;
+  /** Faux tant que l'invitation n'a pas été acceptée. */
+  has_password: boolean;
   created_at: string;
 }
 
@@ -108,4 +110,18 @@ export interface AuditEvent {
   action: string;
   target: string | null;
   ip: string | null;
+}
+
+export interface InvitationResult {
+  user: User;
+  mail_sent: boolean;
+  expires_at: string;
+  /** Présent seulement si le mail n'est pas parti : à transmettre par un canal sûr. */
+  invitation_url: string | null;
+}
+
+export interface InvitationInfo {
+  email: string;
+  role: Role;
+  expires_at: string;
 }
