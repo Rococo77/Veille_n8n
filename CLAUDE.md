@@ -106,8 +106,9 @@ Ne pas passer à SQLite ni à `create_all`.
   - Admin `corentin.rossetto@gmail.com` : connexion + 2FA validées dans le navigateur.
   - Recette API de bout en bout sur Render : 29/29 (login, 2FA + rotation, CSRF, rôles, SSRF,
     jeton n8n, ingestion hostile, idempotence, fil filtré, cascade, logout).
-- **n8n** :
-  - Workflow `FzbwhZhjtlNsdbvm` « Veille RSS → site (zero trust) » : **publié**, credential
+- **n8n** (instance en UTC−4 : la purge « 03:17 » part à 07:17 UTC) :
+  - Workflow `FzbwhZhjtlNsdbvm` « Veille RSS → site (zero trust) » : **publié** (relevé 2 h,
+    échec de push = exécution en erreur, purge nocturne vérifiée le 2026-09-27), credential
     Bearer « Veille site - jeton n8n » (`bslqPTb69Lvn7pBP`) sur les 3 nœuds HTTP. `api_base` =
     URL Render directe.
   - Workflow `QvnqMXLP50qZDhen` « Veille keep-alive Render » : publié (10 min).
@@ -119,16 +120,9 @@ Ne pas passer à SQLite ni à `create_all`.
 - **Render** : auto-deploy sur push `main` vérifié (2026-09-26). Tout push redéploie, y compris
   un commit de doc seule (pas de build filter).
 
-## À faire (dans l'ordre)
+## À faire
 
-1. **Recette fonctionnelle** : thèmes et groupes créés depuis le site ; reste la première
-   source → premier relevé n8n → fil filtré.
-2. **Brevo** : compte, domaine `bytenorth.fr` authentifié (DKIM/SPF/DMARC dans la zone OVH,
-   SPF existant à compléter et non dupliquer), clé API dans Render (`VEILLE_MAIL_API_KEY`).
-3. **Alerte n8n** : un push en échec fait échouer l'exécution (nœud « Fail If Any Push
-   Failed »), mais aucun canal de notification n'est branché (pas de credential mail/Slack).
-4. **Pare-feu de sortie du conteneur n8n** : le rebinding DNS et les redirections
-   contournent `url_policy.py`.
+Liste priorisée et critères de fin dans `task.md` (source unique, à tenir à jour).
 
 ## Points non vérifiés ([PROBABLE])
 
