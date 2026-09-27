@@ -69,6 +69,10 @@ ruff check src tests alembic && ruff format --check src tests alembic
 cd frontend && npm ci && npx ng build && npx ng serve   # proxy /api → :8000
 ```
 
+Toute dépendance runtime ajoutée à `pyproject.toml` doit aussi être épinglée dans
+`backend/requirements.lock` : le Dockerfile installe le lock puis le paquet en `--no-deps`
+(oubli = `ModuleNotFoundError` au démarrage sur Render, vécu avec httpx le 2026-09-27).
+
 Les tests tournent sur un vrai Postgres, avec le schéma issu des migrations Alembic.
 Ne pas passer à SQLite ni à `create_all`.
 
