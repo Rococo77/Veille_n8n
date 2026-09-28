@@ -10,7 +10,10 @@ le navigateur, Claude = code ou vérification) et **quand elle est finie**.
 - Purge nocturne vérifiée le 2026-09-27 à 07:17 UTC : succès, jeton n8n valide.
 - **Aucune source n'est encore active** : le relevé de 12:07 UTC renvoie une liste vide. La
   chaîne RSS → site → fil n'a donc jamais tourné en réel.
-- Backend : 33 tests. Front : build OK, **aucun test automatisé**. **Aucune CI.**
+- Backend : 33 tests. Front : build OK, 6 tests ciblés. CI GitHub Actions verte sur
+  `31bc2eb` (backend, image Docker, front).
+- Pages secondaires refaites dans le monde « fil de dépêches » (`4321dda`).
+- Fuseau du workflow n8n réglé sur `Europe/Paris` et republié (2026-09-28).
 
 ---
 
@@ -82,11 +85,7 @@ le navigateur, Claude = code ou vérification) et **quand elle est finie**.
   une seule fois.
 
 ### 6. CI GitHub Actions (priorité relevée : la prod a cassé le 2026-09-27)
-- **Claude** : sur chaque push et PR :
-  - backend : ruff, puis pytest sur un service Postgres ;
-  - front : `ng build` ;
-  - `docker build` du backend suivi d'un import de l'app. Cette étape aurait attrapé
-    l'oubli de httpx dans `requirements.lock`.
+- **Claude** : fait (`.github/workflows/ci.yml`, run #1 vert).
 - **Toi** : protéger `main` (merge seulement si la CI est verte). Aujourd'hui, tout push sur
   `main` part directement en production.
 - **Fini quand** : une PR qui casse l'image Docker est bloquée avant d'arriver sur `main`.
@@ -109,22 +108,16 @@ le navigateur, Claude = code ou vérification) et **quand elle est finie**.
 - Trancher la barre d'onglets mobile : le contrat dit Fil / Affiner / Groupes / Compte, le
   code a Thèmes à la place d'Affiner.
 
-### 9. Tests front ciblés
-- Un test par cas piégeux, pas plus :
-  - garde `guestOnly` (régression NG0203 déjà vécue) ;
-  - `FeedStore` : une réponse arrivée après un changement de filtre est ignorée ;
-  - `LastVisit` : le marqueur « Nouveau » survit à un retour sur le fil ;
-  - page invitation : le jeton est retiré de l'URL.
+### 9. Tests front ciblés — fait (`31bc2eb`, 6 tests : `guestOnly`, `FeedStore`, `LastVisit`, invitation)
 
 ### 10. Exploitation
-- **Sauvegardes** : l'offre gratuite de Supabase n'a pas de restauration à un instant
-  donné. Prévoir un `pg_dump` planifié, par exemple un workflow n8n hebdomadaire vers un
-  stockage hors Supabase, et faire **un test de restauration**.
-- **Rotation des secrets** : écrire la procédure pour le jeton n8n, `VEILLE_TOTP_ENCRYPTION_KEY`
-  (sa rotation impose une réinitialisation de la 2FA de tous les comptes) et la clé Brevo.
-- **Supabase** : relancer les « advisors » de sécurité après la migration `0003`.
-- **Fuseau n8n** : l'instance tourne en UTC−4. La purge part à 07:17 UTC, pas à 03:17 heure
-  de Paris. Régler le fuseau du workflow sur `Europe/Paris` si l'heure compte.
+- Fait : procédures dans `docs/exploitation.md` (dump hebdo depuis le VPS, test de
+  restauration, rotation de chaque secret). Advisors Supabase relancés après `0003` : seul
+  l'INFO « RLS sans policy » attendu. Fuseau n8n `Europe/Paris`.
+- **Toi** : poser le script et la crontab sur le VPS, puis faire le test de restauration
+  une fois.
+- **Fini quand** : un dump restauré en local donne la bonne version Alembic et les bons
+  comptes.
 
 ### 11. Documentation (dossier EPSI)
 - README : schéma d'architecture, flux d'authentification (mot de passe → TOTP → rotation),

@@ -94,7 +94,9 @@ Ne pas passer à SQLite ni à `create_all`.
     sert aussi de réinitialisation de mot de passe. Mail via Brevo (`VEILLE_MAIL_API_KEY`) ;
     sans clé, le panel affiche le lien. La CLI `veille-admin` reste le seul chemin avec mot de
     passe (amorçage).
-  - Build Angular prod OK.
+  - Build Angular prod OK, 6 tests front ciblés. CI GitHub Actions (`.github/workflows/ci.yml`)
+    verte.
+  - Sauvegardes et rotation des secrets : `docs/exploitation.md`.
   - Migrations `0001` à `0003`.
 - **Déployé (2026-09-25)** :
   - Supabase : projet `veille` (`pcvnjayllvarhqpzhfff`, eu-west-3), rôle `veille_app`, pooler
@@ -106,7 +108,8 @@ Ne pas passer à SQLite ni à `create_all`.
   - Admin `corentin.rossetto@gmail.com` : connexion + 2FA validées dans le navigateur.
   - Recette API de bout en bout sur Render : 29/29 (login, 2FA + rotation, CSRF, rôles, SSRF,
     jeton n8n, ingestion hostile, idempotence, fil filtré, cascade, logout).
-- **n8n** (instance en UTC−4 : la purge « 03:17 » part à 07:17 UTC) :
+- **n8n** (instance en UTC−4, mais fuseau du workflow réglé sur `Europe/Paris` le 2026-09-28 :
+  la purge part à 03:17 heure de Paris) :
   - Workflow `FzbwhZhjtlNsdbvm` « Veille RSS → site (zero trust) » : **publié** (relevé 2 h,
     échec de push = exécution en erreur, purge nocturne vérifiée le 2026-09-27), credential
     Bearer « Veille site - jeton n8n » (`bslqPTb69Lvn7pBP`) sur les 3 nœuds HTTP. `api_base` =
