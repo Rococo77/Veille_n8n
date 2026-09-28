@@ -60,8 +60,14 @@ le navigateur, Claude = code ou vérification) et **quand elle est finie**.
   - Créer un workflow d'erreur n8n : Error Trigger → requête HTTP vers un webhook Discord.
   - Le déclarer comme `errorWorkflow` de « Veille RSS → site » et du keep-alive.
   - Poser `allowed_mentions: {parse: []}` sur chaque message.
+- **Claude** : workflow `a1m1gRYXkvifAus5` « Veille alertes ops → Discord » créé (Error
+  Trigger → Discord en mode webhook, `allowed_mentions` vide, `@` neutralisés, erreur
+  tronquée à 500 caractères). Pas encore publié ni déclaré en `errorWorkflow` : n8n refuse
+  sans version publiée.
 - **Toi** : créer le webhook sur le salon admin et le saisir toi-même dans une credential
-  n8n. Il ne doit pas passer par la conversation.
+  n8n « Discord Webhook » rattachée au nœud « Notify Discord Ops ». Il ne doit pas passer
+  par la conversation. Vérifier au passage que le nœud n'affiche pas d'erreur de paramètre
+  (le validateur MCP signale l'opération `sendLegacy`, probablement à tort).
 - Pourquoi dans n8n : si Render est injoignable, le site ne peut prévenir personne.
 - **Fini quand** : couper l'API (ou fausser l'URL) fait arriver un message sur le salon.
 
