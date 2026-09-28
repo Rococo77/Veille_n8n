@@ -92,7 +92,8 @@ Ne pas passer à SQLite ni à `create_all`.
     le fragment puis dans le corps JSON, jamais dans une URL serveur). Accepter = choisir son
     mot de passe → session pré-MFA → enrôlement TOTP. Renvoyer révoque le lien précédent ;
     sert aussi de réinitialisation de mot de passe. Mail via Brevo (`VEILLE_MAIL_API_KEY`) ;
-    sans clé, le panel affiche le lien. La CLI `veille-admin` reste le seul chemin avec mot de
+    sans clé, le panel affiche le lien. Choix du 2026-09-28 : pas de service mail, l'admin
+    transmet le lien lui-même (clé non configurée en prod, code Brevo dormant). La CLI `veille-admin` reste le seul chemin avec mot de
     passe (amorçage).
   - Build Angular prod OK, 6 tests front ciblés. CI GitHub Actions (`.github/workflows/ci.yml`)
     verte.
