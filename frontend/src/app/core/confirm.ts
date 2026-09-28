@@ -87,11 +87,11 @@ export class ConfirmService {
     dialog {
       width: min(28rem, calc(100vw - 2rem));
       padding: var(--space-5);
-      border: 1px solid var(--rule);
+      border: 1px solid var(--ink);
       border-radius: var(--radius);
-      background: var(--surface);
+      background: var(--paper);
       color: var(--ink);
-      box-shadow: 0 12px 32px -8px rgb(0 0 0 / 0.35);
+      box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.4);
     }
     dialog::backdrop {
       background: rgb(8 12 18 / 0.55);

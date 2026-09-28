@@ -3,13 +3,6 @@
   max-width: 60rem;
 }
 
-.head {
-  margin-bottom: var(--space-5);
-}
-.head p {
-  margin: var(--space-1) 0 0;
-}
-
 .create {
   margin-top: var(--space-5);
 }

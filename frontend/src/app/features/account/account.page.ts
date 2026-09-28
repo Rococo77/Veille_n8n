@@ -24,9 +24,15 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
   imports: [ReactiveFormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h1>Mon compte</h1>
-    <p class="muted">Connecté en tant que {{ auth.me()?.email }}.</p>
+    <div class="page">
+    <header class="page-head">
+      <div>
+        <h1>Mon compte</h1>
+        <p class="lede">Connecté en tant que {{ auth.me()?.email }}.</p>
+      </div>
+    </header>
 
+    <div class="column">
     <!-- Sur mobile, la barre d'onglets n'a que quatre entrées : cette page porte le reste. -->
     <div class="session-actions">
       @if (auth.isAdmin()) {
@@ -40,7 +46,7 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
       </button>
     </div>
 
-    <form class="panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <form class="section" [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <h2>Changer de mot de passe</h2>
       @if (error(); as message) {
         <p class="alert" role="alert">{{ message }}</p>
@@ -91,14 +97,15 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
         Changer le mot de passe
       </button>
     </form>
+    </div>
+    </div>
   `,
   styles: `
     :host {
       display: block;
-      max-width: 30rem;
     }
-    .panel {
-      margin-top: var(--space-5);
+    .column {
+      max-width: 30rem;
     }
     .session-actions {
       display: flex;
@@ -106,7 +113,6 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
       align-items: center;
       justify-content: space-between;
       gap: var(--space-4);
-      margin-top: var(--space-4);
     }
     .admin-links {
       display: flex;
@@ -115,7 +121,7 @@ function samePasswords(group: AbstractControl): ValidationErrors | null {
     .admin-links a {
       display: inline-flex;
       align-items: center;
-      min-height: 44px;
+      min-height: var(--target);
     }
   `,
 })

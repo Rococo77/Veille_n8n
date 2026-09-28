@@ -41,12 +41,15 @@ const ACTIONS: Record<string, string> = {
   selector: 'app-audit-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="head">
-      <h1>Journal d'audit</h1>
-      <p class="muted">
-        Les {{ limit() }} derniers événements de sécurité et de modification, du plus récent au plus
-        ancien.
-      </p>
+    <div class="page">
+    <header class="page-head">
+      <div>
+        <h1>Journal d'audit</h1>
+        <p class="lede">
+          Les {{ limit() }} derniers événements de sécurité et de modification, du plus récent au
+          plus ancien.
+        </p>
+      </div>
     </header>
     @if (loadError(); as message) {
       <p class="alert" role="alert">{{ message }}</p>
@@ -107,17 +110,11 @@ const ACTIONS: Record<string, string> = {
         </button>
       </p>
     }
+    </div>
   `,
   styles: `
     :host {
       display: block;
-      max-width: 70rem;
-    }
-    .head {
-      margin-bottom: var(--space-5);
-    }
-    .head p {
-      margin: var(--space-1) 0 0;
     }
     .toolbar {
       margin-bottom: var(--space-2);
@@ -133,7 +130,7 @@ const ACTIONS: Record<string, string> = {
       margin-top: var(--space-4);
     }
     tr.alerting td:nth-child(2) {
-      color: var(--alert);
+      color: var(--wire);
       font-weight: 600;
     }
   `,

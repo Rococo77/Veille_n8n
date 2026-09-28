@@ -26,9 +26,10 @@ import { filter, map, take } from 'rxjs';
       gap: var(--space-2);
     }
     .brand {
-      font-family: var(--font-read);
-      font-size: var(--step-3);
-      font-weight: 700;
+      font-size: var(--step-2);
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
   `,
 })

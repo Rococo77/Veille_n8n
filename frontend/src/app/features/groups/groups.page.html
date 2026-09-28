@@ -1,24 +1,21 @@
-<header class="page-head">
-  <div>
-    <h1>Groupes et sources</h1>
-    <p class="muted">Chaque groupe rassemble des flux RSS sous un type de veille et un thème.</p>
-  </div>
-  @if (auth.isEditor() && !creating() && themes().length > 0) {
-    <button class="btn btn-primary" type="button" (click)="creating.set(true)">
-      Nouveau groupe
-    </button>
-  }
-</header>
+<div class="page">
+  <header class="page-head">
+    <div>
+      <h1>Groupes et sources</h1>
+      <p class="lede">Chaque groupe rassemble des flux RSS sous un type de veille et un thème.</p>
+    </div>
+    @if (auth.isEditor() && !creating() && themes().length > 0) {
+      <div class="actions">
+        <button class="btn btn-primary" type="button" (click)="creating.set(true)">
+          Nouveau groupe
+        </button>
+      </div>
+    }
+  </header>
 
-@if (creating()) {
-  <section class="panel" aria-labelledby="new-group">
-    <h2 id="new-group">Nouveau groupe</h2>
-    @if (themes().length === 0) {
-      <p>
-        Il faut au moins un thème pour classer un groupe.
-        <a routerLink="/themes">Créer un thème</a>
-      </p>
-    } @else {
+  @if (creating()) {
+    <section class="section create" aria-labelledby="new-group">
+      <h2 id="new-group">Nouveau groupe</h2>
       @if (error(); as message) {
         <p class="alert" role="alert">{{ message }}</p>
       }
@@ -29,59 +26,61 @@
         (submitted)="create($event)"
         (cancelled)="creating.set(false)"
       />
-    }
-  </section>
-}
-
-@if (loadError(); as message) {
-  <p class="alert" role="alert">{{ message }}</p>
-}
-
-@for (section of sections(); track section.value) {
-  <section class="type-block" [attr.aria-labelledby]="'t-' + section.value">
-    <h2 [id]="'t-' + section.value">Veille {{ section.label.toLowerCase() }}</h2>
-    <ul class="group-list">
-      @for (g of section.groups; track g.id) {
-        <li>
-          <a class="group-row" [routerLink]="['/groupes', g.id]" [class.off]="!g.enabled">
-            <span class="swatch" [style.background]="g.theme.color" aria-hidden="true"></span>
-            <span class="name">{{ g.name }}</span>
-            <span class="muted small">{{ g.theme.name }}</span>
-            <span class="facts small">
-              {{ g.source_count }} {{ g.source_count > 1 ? 'sources' : 'source' }}
-              @if (g.failing_source_count > 0) {
-                <span class="status-error">{{ g.failing_source_count }} en erreur</span>
-              }
-              @if (!g.enabled) {
-                <span class="muted">en pause</span>
-              }
-            </span>
-          </a>
-        </li>
-      }
-    </ul>
-  </section>
-} @empty {
-  @if (!loading() && !loadError() && !creating()) {
-    <div class="empty" role="status">
-      <h2>Aucun groupe pour l'instant</h2>
-      @if (!auth.isEditor()) {
-        <p class="muted">Les éditeurs de l'équipe créent les groupes et y ajoutent les flux.</p>
-      } @else if (themes().length === 0) {
-        <p class="muted">
-          Un groupe se classe sous un thème : commencez par en créer un, par exemple « Cloud »
-          ou « Concurrents ».
-        </p>
-        <a class="btn btn-primary" routerLink="/themes">Créer un thème</a>
-      } @else {
-        <p class="muted">
-          Un groupe réunit des flux RSS sous un type de veille et un thème. Créez-en un, puis
-          ajoutez-y vos sources.
-        </p>
-        <button class="btn btn-primary" type="button" (click)="creating.set(true)">
-          Créer le premier groupe
-        </button>
-      }
-    </div>
+    </section>
   }
-}
+
+  @if (loadError(); as message) {
+    <p class="alert" role="alert">{{ message }}</p>
+  }
+
+  @for (section of sections(); track section.value) {
+    <section class="type-block" [attr.aria-labelledby]="'t-' + section.value">
+      <h2 class="type-label slug" [id]="'t-' + section.value">{{ section.label }}</h2>
+      <ul class="group-list">
+        @for (g of section.groups; track g.id) {
+          <li>
+            <a class="group-row" [routerLink]="['/groupes', g.id]" [class.off]="!g.enabled">
+              <span class="name">{{ g.name }}</span>
+              <span class="theme small"
+                ><span class="swatch" [style.background]="g.theme.color" aria-hidden="true"></span
+                >{{ g.theme.name }}</span
+              >
+              <span class="facts small num">
+                {{ g.source_count }} {{ g.source_count > 1 ? 'sources' : 'source' }}
+                @if (g.failing_source_count > 0) {
+                  <span class="status-error">{{ g.failing_source_count }} en erreur</span>
+                }
+                @if (!g.enabled) {
+                  <span class="muted">en pause</span>
+                }
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  } @empty {
+    @if (!loading() && !loadError() && !creating()) {
+      <div class="empty" role="status">
+        <h2>Aucun groupe pour l'instant</h2>
+        @if (!auth.isEditor()) {
+          <p class="muted">Les éditeurs de l'équipe créent les groupes et y ajoutent les flux.</p>
+        } @else if (themes().length === 0) {
+          <p class="muted">
+            Un groupe se classe sous un thème : commencez par en créer un, par exemple
+            «&nbsp;Cloud&nbsp;» ou «&nbsp;Concurrents&nbsp;».
+          </p>
+          <a class="btn btn-primary" routerLink="/themes">Créer un thème</a>
+        } @else {
+          <p class="muted">
+            Un groupe réunit des flux RSS sous un type de veille et un thème. Créez-en un, puis
+            ajoutez-y vos sources.
+          </p>
+          <button class="btn btn-primary" type="button" (click)="creating.set(true)">
+            Créer le premier groupe
+          </button>
+        }
+      </div>
+    }
+  }
+</div>

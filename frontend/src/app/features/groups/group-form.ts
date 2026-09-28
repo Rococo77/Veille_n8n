@@ -67,8 +67,8 @@ import { GroupInput, Theme, VEILLE_TYPES, VeilleType } from '../../core/models';
   styles: `
     .grid {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
-      gap: var(--space-3);
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0 var(--space-4);
     }
     @media (max-width: 40rem) {
       .grid {

@@ -1,33 +1,46 @@
+/* Pages hors session : une colonne étroite, le mot-symbole sur le filet d'encre du bandeau.
+   Pas de carte : le formulaire est posé sur le papier, comme le reste de l'application. */
+
 .auth {
   min-height: 100dvh;
   display: grid;
-  place-content: center;
-  gap: var(--space-5);
-  padding: var(--space-5) var(--space-4);
+  align-content: center;
+  justify-items: stretch;
+  width: min(24rem, 100% - 2 * var(--gutter));
+  margin-inline: auto;
+  padding-block: var(--space-6);
 }
 
 .brand {
-  font-family: var(--font-read);
-  font-size: var(--step-3);
-  text-align: center;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--ink);
+  font-size: var(--step-1);
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 form,
 .panel-card {
-  width: min(24rem, 100%);
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  padding: var(--space-5);
+  padding-top: var(--space-5);
 }
 
-form h2 {
+form h2,
+.panel-card h2 {
   margin-bottom: var(--space-4);
+  font-size: var(--step-2);
+  font-weight: 750;
+  letter-spacing: -0.015em;
+}
+.panel-card p + p {
+  margin-top: var(--space-3);
 }
 
 .wide {
   width: 100%;
-  justify-content: center;
+}
+form > .small {
+  margin-top: var(--space-3);
 }
 
 .enroll {
@@ -35,15 +48,15 @@ form h2 {
   gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
-
 .enroll ol {
   margin: 0;
   padding-left: 1.2rem;
 }
 
 canvas {
-  justify-self: center;
-  border-radius: var(--radius);
+  justify-self: start;
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
   background: #fff;
 }
 
@@ -56,6 +69,7 @@ canvas {
 
 .code {
   font-size: var(--step-2);
+  font-weight: 700;
   letter-spacing: 0.3em;
   text-align: center;
   font-variant-numeric: tabular-nums;

@@ -1,9 +1,12 @@
-<header class="head">
-  <h1>Utilisateurs</h1>
-  <p class="muted">
-    Lecture : consulter le fil. Édition : gérer groupes, sources et thèmes. Administration : gérer
-    les comptes et lire le journal.
-  </p>
+<div class="page">
+<header class="page-head">
+  <div>
+    <h1>Utilisateurs</h1>
+    <p class="lede">
+      Lecture : consulter le fil. Édition : gérer groupes, sources et thèmes. Administration :
+      gérer les comptes et lire le journal.
+    </p>
+  </div>
 </header>
 
 @if (error() ?? loadError(); as message) {
@@ -133,7 +136,7 @@
   </table>
 </div>
 
-<form class="panel create" [formGroup]="form" (ngSubmit)="create()" novalidate>
+<form class="section create" [formGroup]="form" (ngSubmit)="create()" novalidate>
   <h2>Ajouter un compte</h2>
   <div class="grid">
     <div class="field">
@@ -163,3 +166,4 @@
     Envoyer l'invitation
   </button>
 </form>
+</div>

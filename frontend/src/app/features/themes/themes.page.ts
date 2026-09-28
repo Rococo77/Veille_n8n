@@ -20,13 +20,17 @@ const READABLE_HINT =
   imports: [ReactiveFormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="head">
+    <div class="page">
+    <header class="page-head">
+      <div>
       <h1>Thèmes et couleurs</h1>
-      <p class="muted">
+      <p class="lede">
         Un thème classe les groupes par sujet, quel que soit leur type de veille. Son nom et sa
         couleur accompagnent chaque article du fil.
       </p>
+      </div>
     </header>
+    <div class="column">
 
     @if (error() ?? loadError(); as message) {
       <p class="alert" role="alert">{{ message }}</p>
@@ -75,7 +79,7 @@ const READABLE_HINT =
       </p>
     }
 
-    <form class="panel create" [formGroup]="form" (ngSubmit)="create()" novalidate>
+    <form class="section create" [formGroup]="form" (ngSubmit)="create()" novalidate>
       <h2>Nouveau thème</h2>
       <div class="create-row">
         <div class="field color">
@@ -116,23 +120,20 @@ const READABLE_HINT =
         }}
       </span>
     </form>
+    </div>
+    </div>
   `,
   styles: `
     :host {
       display: block;
-      max-width: 40rem;
     }
-    .head {
-      margin-bottom: var(--space-5);
-    }
-    .head p {
-      margin: var(--space-1) 0 0;
+    .column {
+      max-width: var(--measure);
     }
     .themes {
       list-style: none;
       margin: 0 0 var(--space-3);
       padding: 0;
-      border-top: 1px solid var(--rule);
     }
     .themes li {
       display: flex;
@@ -144,7 +145,7 @@ const READABLE_HINT =
     .name {
       flex: 1;
       min-width: 0;
-      font-weight: 600;
+      font-weight: 700;
       overflow-wrap: anywhere;
     }
     .usage {

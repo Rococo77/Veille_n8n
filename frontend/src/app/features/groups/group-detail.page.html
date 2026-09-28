@@ -1,4 +1,5 @@
-<p class="small back"><a routerLink="/groupes">Groupes et sources</a></p>
+<div class="page">
+<p class="back small"><a routerLink="/groupes">Groupes et sources</a></p>
 
 @if (loadError(); as message) {
   <p class="alert" role="alert">{{ message }}</p>
@@ -7,19 +8,23 @@
 @if (group(); as g) {
   <header class="page-head">
     <div>
-      <h1 class="row">
-        <span class="swatch" [style.background]="g.theme.color" aria-hidden="true"></span>
-        {{ g.name }}
-      </h1>
-      <p class="muted">Veille {{ typeLabel(g.veille_type).toLowerCase() }}, thème {{ g.theme.name }}.</p>
+      <h1>{{ g.name }}</h1>
+      <p class="slug meta-line">
+        {{ typeLabel(g.veille_type) }}
+        <span class="sep" aria-hidden="true">/</span>
+        <span class="theme"
+          ><span class="swatch" [style.background]="g.theme.color" aria-hidden="true"></span
+          >{{ g.theme.name }}</span
+        >
+      </p>
       @if (!g.enabled) {
         <p class="notice">En pause : n8n ne relève pas ces sources.</p>
       }
       @if (g.description) {
-        <p>{{ g.description }}</p>
+        <p class="lede">{{ g.description }}</p>
       }
     </div>
-    <div class="row">
+    <div class="actions">
       <a class="btn" routerLink="/" [queryParams]="{ group: g.id }">Voir les articles</a>
       @if (auth.isEditor() && !editing()) {
         <button class="btn" type="button" (click)="editing.set(true)">Modifier</button>
@@ -32,7 +37,7 @@
   }
 
   @if (editing()) {
-    <section class="panel" aria-labelledby="edit-group">
+    <section class="section" aria-labelledby="edit-group">
       <h2 id="edit-group">Modifier le groupe</h2>
       <app-group-form
         [themes]="themes()"
@@ -60,7 +65,7 @@
     </section>
   }
 
-  <section aria-labelledby="sources-title">
+  <section class="section" aria-labelledby="sources-title">
     <h2 id="sources-title" class="section-title">Sources</h2>
     <p class="muted small">n8n relève chaque source active toutes les deux heures.</p>
     <div class="table-wrap">
@@ -153,7 +158,7 @@
     </div>
 
     @if (auth.isEditor()) {
-      <form class="panel add-source" [formGroup]="sourceForm" (ngSubmit)="addSource()" novalidate>
+      <form class="add-source" [formGroup]="sourceForm" (ngSubmit)="addSource()" novalidate>
         <h3>Ajouter une source</h3>
         <div class="source-grid">
           <div class="field">
@@ -204,3 +209,4 @@
     <span class="skeleton"></span>
   </div>
 }
+</div>
