@@ -102,10 +102,22 @@ Non vérifié : arrivée hors spam chez d'autres fournisseurs que celui du test.
   `main` part directement en production.
 - **Fini quand** : une PR qui casse l'image Docker est bloquée avant d'arriver sur `main`.
 
-### 7. Pare-feu de sortie du conteneur n8n
-- **Toi et Claude** : sur le VPS, interdire au conteneur n8n de joindre les plages
-  privées : RFC 1918, `127.0.0.0/8`, `169.254.0.0/16` (métadonnées cloud), les réseaux
-  Docker, et les services Coolify.
+### 7. Pare-feu de sortie du conteneur n8n — partiel (2026-09-30)
+- **Constat** : `ufw` ne filtre que l'entrée ; depuis n8n, `169.254.169.254` (métadonnées
+  OVH) répondait 200, et `infra-minio` / `infra-postgres` étaient joignables.
+- **Fait** :
+  - Règle `DOCKER-USER -d 169.254.0.0/16 -j DROP` pour tous les conteneurs, réappliquée à
+    chaque démarrage de Docker par l'unité systemd `docker-user-block-metadata.service`.
+  - n8n retiré du réseau `shared-infra` (branché à la main, absent du compose).
+  - Workflow mort « Veille - Daily Intelligence Digest » archivé (seul utilisateur de
+    l'infra, via la credential Postgres « Veille »).
+  - Re-test : métadonnées, `infra-postgres`, `infra-minio` fermés ; Render et Discord OK.
+- **Reste (option C)** : n8n est encore sur le réseau `proxy` (Traefik, CRM, cookie,
+  pokebattle) et joint l'hôte (Traefik 80/443). `br_netfilter` n'est pas chargé : le trafic
+  entre conteneurs d'un même réseau échappe à iptables. Correctif : réseau Traefik dédié à
+  n8n, et règle `INPUT` limitant les conteneurs à l'état établi.
+- **Toi** : supprimer définitivement la credential « Veille » et le workflow archivé dans
+  l'interface n8n.
 - Pourquoi : `url_policy.py` valide l'URL au moment de sa création, mais le rebinding DNS
   et les redirections HTTP la contournent au moment du relevé.
 - **Fini quand** : une source qui redirige vers `http://169.254.169.254/` échoue côté n8n.
