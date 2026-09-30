@@ -93,7 +93,8 @@ Ne pas passer à SQLite ni à `create_all`.
     mot de passe → session pré-MFA → enrôlement TOTP. Renvoyer révoque le lien précédent ;
     sert aussi de réinitialisation de mot de passe. Mail via l'API HTTPS de Resend
     (`VEILLE_MAIL_API_KEY`, offre gratuite ; Brevo abandonné le 2026-09-30, payant) ; sans
-    clé, le panel affiche le lien et l'admin le transmet lui-même. La CLI `veille-admin` reste le seul chemin avec mot de
+    clé, le panel affiche le lien et l'admin le transmet lui-même. En prod depuis le
+    2026-09-30 : clé dans Render, domaine `bytenorth.fr` vérifié, mail de test reçu. La CLI `veille-admin` reste le seul chemin avec mot de
     passe (amorçage).
   - Build Angular prod OK, 6 tests front ciblés. CI GitHub Actions (`.github/workflows/ci.yml`)
     verte.
