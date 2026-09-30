@@ -39,11 +39,13 @@ le navigateur, Claude = code ou vérification) et **quand elle est finie**.
 - **Fini quand** : aucun écran cassé, aucune erreur dans la console du navigateur (CSP
   comprise).
 
-### 3. Envoi réel des mails d'invitation (Resend, offre gratuite)
+### 3. Envoi réel des mails d'invitation (Resend, offre gratuite) — fait le 2026-09-30
 
-Brevo écarté (payant). Le backend appelle désormais l'API HTTPS de Resend. Sans
-`VEILLE_MAIL_API_KEY`, rien ne change : le panel affiche le lien et l'admin le transmet.
-- **Toi** :
+Brevo écarté (payant). Le backend appelle l'API HTTPS de Resend. Clé posée dans Render ;
+invitation de test : `POST https://api.resend.com/emails` → 200 à 09:56 UTC, mail reçu.
+Sans `VEILLE_MAIL_API_KEY`, le panel afficherait le lien et l'admin le transmettrait.
+Non vérifié : arrivée hors spam chez d'autres fournisseurs que celui du test.
+- **Toi** (fait) :
   1. Créer le compte Resend et y ajouter le domaine `bytenorth.fr`.
   2. Dans la zone DNS OVH, ajouter exactement les enregistrements affichés par Resend
      (DKIM, et SPF/MX sur le sous-domaine d'envoi). Si Resend demande un SPF sur la
