@@ -19,6 +19,6 @@ services:
         sync: false
       - key: VEILLE_INTERNAL_TOKEN_SHA256
         sync: false
-      # Clé API Brevo (envoi des invitations). Absente : le panel admin affiche le lien.
+      # Clé API Resend (envoi des invitations). Absente : le panel admin affiche le lien.
       - key: VEILLE_MAIL_API_KEY
         sync: false

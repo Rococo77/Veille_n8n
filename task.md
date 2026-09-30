@@ -39,13 +39,17 @@ le navigateur, Claude = code ou vérification) et **quand elle est finie**.
 - **Fini quand** : aucun écran cassé, aucune erreur dans la console du navigateur (CSP
   comprise).
 
-### 3. Envoi réel des mails d'invitation (Brevo)
+### 3. Envoi réel des mails d'invitation (Resend, offre gratuite)
+
+Brevo écarté (payant). Le backend appelle désormais l'API HTTPS de Resend. Sans
+`VEILLE_MAIL_API_KEY`, rien ne change : le panel affiche le lien et l'admin le transmet.
 - **Toi** :
-  1. Créer le compte Brevo et y ajouter le domaine `bytenorth.fr`.
-  2. Dans la zone DNS OVH, ajouter les enregistrements fournis par Brevo : TXT de
-     vérification, DKIM, et DMARC s'il est absent.
-  3. SPF : **compléter la ligne `v=spf1` existante**, ne jamais en créer une seconde.
-  4. Créer la clé API et la mettre dans Render sous `VEILLE_MAIL_API_KEY`.
+  1. Créer le compte Resend et y ajouter le domaine `bytenorth.fr`.
+  2. Dans la zone DNS OVH, ajouter exactement les enregistrements affichés par Resend
+     (DKIM, et SPF/MX sur le sous-domaine d'envoi). Si Resend demande un SPF sur la
+     racine : **compléter la ligne `v=spf1` existante**, ne jamais en créer une seconde.
+  3. Attendre « Verified », créer une clé API « Sending access » limitée à ce domaine, et
+     la mettre dans Render sous `VEILLE_MAIL_API_KEY`.
 - **Claude** : après ta première invitation de test, vérifier dans les logs Render le statut
   de l'envoi (jamais le contenu).
 - **Fini quand** : le mail arrive en boîte de réception, pas en spam, avec un lien qui
@@ -89,8 +93,10 @@ le navigateur, Claude = code ou vérification) et **quand elle est finie**.
   une seule fois.
 
 ### 6. CI GitHub Actions (priorité relevée : la prod a cassé le 2026-09-27)
-- **Claude** : fait (`.github/workflows/ci.yml`, run #1 vert).
-- **Toi** : protéger `main` (merge seulement si la CI est verte). Aujourd'hui, tout push sur
+- **Fait (2026-09-28)** : `.github/workflows/ci.yml` (run #1 vert) et ruleset « gk » actif
+  sur `main` : checks `backend`, `docker`, `frontend` requis, force push et suppression
+  interdits, aucune exemption. Tout changement passe donc par une branche + PR.
+- Ancienne consigne : protéger `main` (merge seulement si la CI est verte). Aujourd'hui, tout push sur
   `main` part directement en production.
 - **Fini quand** : une PR qui casse l'image Docker est bloquée avant d'arriver sur `main`.
 

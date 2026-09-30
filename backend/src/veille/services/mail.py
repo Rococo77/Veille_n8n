@@ -14,7 +14,7 @@ from veille.config import Settings
 
 logger = logging.getLogger("veille.mail")
 
-_BREVO_URL = "https://api.brevo.com/v3/smtp/email"
+_RESEND_URL = "https://api.resend.com/emails"
 _TIMEOUT = httpx.Timeout(10.0)
 
 
@@ -39,28 +39,28 @@ class DisabledMailer:
         return False
 
 
-class BrevoMailer:
+class ResendMailer:
     def __init__(self, settings: Settings) -> None:
         assert settings.mail_api_key is not None
         self._key = settings.mail_api_key.get_secret_value()
-        self._sender = {"email": settings.mail_from, "name": settings.mail_from_name}
-        self._reply_to = {"email": settings.mail_reply_to} if settings.mail_reply_to else None
+        self._sender = f"{settings.mail_from_name} <{settings.mail_from}>"
+        self._reply_to = settings.mail_reply_to
 
     async def send(self, mail: Mail) -> bool:
         body: dict[str, object] = {
-            "sender": self._sender,
-            "to": [{"email": mail.to}],
+            "from": self._sender,
+            "to": [mail.to],
             "subject": mail.subject,
-            "textContent": mail.text,
+            "text": mail.text,
         }
         if self._reply_to:
-            body["replyTo"] = self._reply_to
+            body["reply_to"] = self._reply_to
         try:
             async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
                 response = await client.post(
-                    _BREVO_URL,
+                    _RESEND_URL,
                     json=body,
-                    headers={"api-key": self._key, "accept": "application/json"},
+                    headers={"Authorization": f"Bearer {self._key}"},
                 )
         except httpx.HTTPError as exc:
             logger.warning("envoi de mail impossible : %s", type(exc).__name__)
@@ -68,9 +68,9 @@ class BrevoMailer:
         if response.is_success:
             return True
         # Statut seul : le corps de la réponse peut reprendre la requête, donc le lien.
-        logger.warning("envoi de mail refusé par Brevo : HTTP %s", response.status_code)
+        logger.warning("envoi de mail refusé par Resend : HTTP %s", response.status_code)
         return False
 
 
 def build_mailer(settings: Settings) -> Mailer:
-    return BrevoMailer(settings) if settings.mail_api_key else DisabledMailer()
+    return ResendMailer(settings) if settings.mail_api_key else DisabledMailer()
