@@ -39,17 +39,17 @@ le navigateur, Claude = code ou vérification) et **quand elle est finie**.
 - **Fini quand** : aucun écran cassé, aucune erreur dans la console du navigateur (CSP
   comprise).
 
-### 3. ~~Envoi réel des mails d'invitation (Brevo)~~ — abandonné le 2026-09-28
+### 3. Envoi réel des mails d'invitation (Resend, offre gratuite)
 
-Pas de service mail payant. Sans `VEILLE_MAIL_API_KEY`, le panel admin affiche le lien
-d'invitation (usage unique, 48 h) et l'admin le transmet lui-même. Le code Brevo reste
-dormant ; à rebrancher seulement si le nombre de comptes le justifie. Ancien plan :
+Brevo écarté (payant). Le backend appelle désormais l'API HTTPS de Resend. Sans
+`VEILLE_MAIL_API_KEY`, rien ne change : le panel affiche le lien et l'admin le transmet.
 - **Toi** :
-  1. Créer le compte Brevo et y ajouter le domaine `bytenorth.fr`.
-  2. Dans la zone DNS OVH, ajouter les enregistrements fournis par Brevo : TXT de
-     vérification, DKIM, et DMARC s'il est absent.
-  3. SPF : **compléter la ligne `v=spf1` existante**, ne jamais en créer une seconde.
-  4. Créer la clé API et la mettre dans Render sous `VEILLE_MAIL_API_KEY`.
+  1. Créer le compte Resend et y ajouter le domaine `bytenorth.fr`.
+  2. Dans la zone DNS OVH, ajouter exactement les enregistrements affichés par Resend
+     (DKIM, et SPF/MX sur le sous-domaine d'envoi). Si Resend demande un SPF sur la
+     racine : **compléter la ligne `v=spf1` existante**, ne jamais en créer une seconde.
+  3. Attendre « Verified », créer une clé API « Sending access » limitée à ce domaine, et
+     la mettre dans Render sous `VEILLE_MAIL_API_KEY`.
 - **Claude** : après ta première invitation de test, vérifier dans les logs Render le statut
   de l'envoi (jamais le contenu).
 - **Fini quand** : le mail arrive en boîte de réception, pas en spam, avec un lien qui

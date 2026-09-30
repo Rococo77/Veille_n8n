@@ -62,7 +62,7 @@ vérité ; n8n n'est qu'un worker sans état.
 ```bash
 # Backend : Postgres local via `docker compose up -d db`
 cd backend && python -m venv .venv && . .venv/bin/activate && pip install -e '.[dev]'
-VEILLE_TEST_DATABASE_URL=postgresql+asyncpg://veille:veille@127.0.0.1:5432/veille pytest   # 33 tests
+VEILLE_TEST_DATABASE_URL=postgresql+asyncpg://veille:veille@127.0.0.1:5432/veille pytest   # 35 tests
 ruff check src tests alembic && ruff format --check src tests alembic
 
 # Frontend (Node ≥ 22.22.3 ou 24 ; sinon `npx -y node@24 node_modules/@angular/cli/bin/ng.js build`)
@@ -79,7 +79,7 @@ Ne pas passer à SQLite ni à `create_all`.
 ## État
 
 - **Fait et vérifié** :
-  - Backend complet, 33 tests passent.
+  - Backend complet, 35 tests passent.
   - Durcissements (2026-09-26) : argon2 hors boucle d'événements (2 calculs max, 503 au-delà
     de 5 s d'attente), verrouillage fixe 15 min + compteur atomique, `POST /api/internal/purge`
     (rétention `VEILLE_ARTICLE_RETENTION_DAYS`=180 / `VEILLE_AUDIT_RETENTION_DAYS`=365).
@@ -91,9 +91,9 @@ Ne pas passer à SQLite ni à `create_all`.
     de passe ; lien à usage unique `…/invitation#<jeton>` (48 h, SHA-256 en base, jeton dans
     le fragment puis dans le corps JSON, jamais dans une URL serveur). Accepter = choisir son
     mot de passe → session pré-MFA → enrôlement TOTP. Renvoyer révoque le lien précédent ;
-    sert aussi de réinitialisation de mot de passe. Mail via Brevo (`VEILLE_MAIL_API_KEY`) ;
-    sans clé, le panel affiche le lien. Choix du 2026-09-28 : pas de service mail, l'admin
-    transmet le lien lui-même (clé non configurée en prod, code Brevo dormant). La CLI `veille-admin` reste le seul chemin avec mot de
+    sert aussi de réinitialisation de mot de passe. Mail via l'API HTTPS de Resend
+    (`VEILLE_MAIL_API_KEY`, offre gratuite ; Brevo abandonné le 2026-09-30, payant) ; sans
+    clé, le panel affiche le lien et l'admin le transmet lui-même. La CLI `veille-admin` reste le seul chemin avec mot de
     passe (amorçage).
   - Build Angular prod OK, 6 tests front ciblés. CI GitHub Actions (`.github/workflows/ci.yml`)
     verte.
@@ -130,6 +130,6 @@ Liste priorisée et critères de fin dans `task.md` (source unique, à tenir à 
 
 ## Points non vérifiés ([PROBABLE])
 
-- Render gratuit bloquerait le SMTP sortant : d'où l'API HTTPS de Brevo.
+- Render gratuit bloquerait le SMTP sortant : d'où l'API HTTPS de Resend.
 
 - Limites actuelles de l'offre gratuite Render (750 h/mois, endormissement après 15 min).
